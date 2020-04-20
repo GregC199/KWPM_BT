@@ -79,20 +79,21 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
-	HAL_Delay(150); //*****************  Przywrocenie ustawien fabrycznych
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
-	HAL_Delay(150); //****************************  Wyzerowanie sparowanych urzadzen
-	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
-	HAL_Delay(150);*/ //*********************************************  Zmiana nazwy na  BT_STM
+	HAL_Delay(100); //Przywrocenie ustawien fabrycznych
+	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
+	HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
-	HAL_Delay(150); //*********************  Ustawienie roli urzadzenia w tryb slave
+	HAL_Delay(100); //Zmiana nazwy na  BT_STM
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
-	HAL_Delay(150); //************************  Ustawienie predkosci, ilosci bitow stop, parzystosci
+	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
-	HAL_Delay(150);
+	HAL_Delay(100); //Ustawienie predkosci, ilosci bitow stop, parzystosci
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
 }
+
 
 /* USER CODE END 0 */
 
