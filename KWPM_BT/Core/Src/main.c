@@ -28,7 +28,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,6 +50,10 @@
 
 /* USER CODE BEGIN PV */
 
+//Komunikacja
+int8_t Wiadomosc[200];
+int16_t Rozmiar;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,6 +64,35 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+volatile int flaga = 0;
+//printf przeciazenie
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef* htim)
+{
+	if(htim == &htim11){
+		flaga = 1;
+	}
+}
+
+void Setup_UART_BT(UART_HandleTypeDef * UART){
+
+	HAL_Delay(1000);
+	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
+	HAL_Delay(150); //*****************  Przywrocenie ustawien fabrycznych
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+	HAL_Delay(150); //****************************  Wyzerowanie sparowanych urzadzen
+	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
+	HAL_Delay(150);*/ //*********************************************  Zmiana nazwy na  BT_STM
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
+	HAL_Delay(150); //*********************  Ustawienie roli urzadzenia w tryb slave
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
+	HAL_Delay(150); //************************  Ustawienie predkosci, ilosci bitow stop, parzystosci
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
+	HAL_Delay(150);
+	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
+
+}
 
 /* USER CODE END 0 */
 
@@ -96,6 +130,12 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  //Inicjalizacja ustawien dla modulu HC-05
+  Setup_UART_BT(&huart2);
+
+  //TIM11 - 66Hz
+  HAL_TIM_Base_Start_IT(&htim11);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,6 +144,19 @@ int main(void)
 
   while (1)
   {
+	   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+
+		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+
+			   if (flaga == 1){
+				   Rozmiar = sprintf((char *)Wiadomosc, "A:X Y Z Z:X Y Z\r\n");
+
+				   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+
+				   flaga = 0;
+			   }
+		   }
+	   }
 
     /* USER CODE END WHILE */
 
