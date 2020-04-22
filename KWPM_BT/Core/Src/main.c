@@ -75,15 +75,6 @@ float X_g = 0; // Zawiera przyspieszenie w osi X w jednostce g - przyspieszenia 
 float Y_g = 0; // Zawiera przyspieszenie w osi Y w jednostce g - przyspieszenia ziemskiego
 float Z_g = 0; // Zawiera przyspieszenie w osi Z w jednostce g - przyspieszenia ziemskiego
 
-float X_mem = 0; // Poprzednia wartość
-float Y_mem = 0; // Poprzednia wartość
-float Z_mem = 0; // Poprzednia wartość
-
-float X_roznica = 0; // Przechowywuje roznice
-float Y_roznica = 0; // Przechowywuje roznice
-float Z_roznica = 0; // Przechowywuje roznice
-
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -184,8 +175,17 @@ int main(void)
 
 	  		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-	  				   if (flaga == 1){
-	  					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
+	  			if (flaga == 1){
+	  				HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
+
+	  				 X = ((Dane[1] << 8) | Dane[0]);
+	  				 Y = ((Dane[3] << 8) | Dane[2]);
+	  				 Z = ((Dane[5] << 8) | Dane[4]);
+
+	  				 X_g = ((float) X * 4.0) / (float) INT16_MAX;
+					 Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
+					 Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
+
 
 	  			 flaga = 0;
 	  			}
