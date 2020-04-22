@@ -29,9 +29,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
+#include <math.h>
 /* USER CODE END Includes */
-
+// a
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
@@ -39,6 +41,16 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define ACC_USTAWIENIA 0x57
+#define ACC_ADRES (0x19 << 1)
+#define ACC_CTRL_REG1_A 0x20
+#define ACC_CTRL_REG4_A 0x23
+#define ACC_ZCZYTANIE_POCZATEK 0x28
+#define ACC_MULTI_READ 0x80
+#define ACC_WSZYSTKIE_OSIE_ZCZYTANIE (ACC_MULTI_READ | ACC_ZCZYTANIE_POCZATEK)
+#define ACC_SET_4G 0x10
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,6 +65,24 @@
 //Komunikacja
 int8_t Wiadomosc[200];
 int16_t Rozmiar;
+
+uint8_t Dane[6]; // Tablica przechowujaca wszystkie bajty zczytane z akcelerometru
+int16_t X = 0; // Zczytane dane z osi X w formie zlaczonych w całość bajtów starszych i młodszych
+int16_t Y = 0; // Zczytane dane z osi Y w formie zlaczonych w całość bajtów starszych i młodszych
+int16_t Z = 0; // Zczytane dane z osi Z w formie zlaczonych w całość bajtów starszych i młodszych
+
+float X_g = 0; // Zawiera przyspieszenie w osi X w jednostce g - przyspieszenia ziemskiego
+float Y_g = 0; // Zawiera przyspieszenie w osi Y w jednostce g - przyspieszenia ziemskiego
+float Z_g = 0; // Zawiera przyspieszenie w osi Z w jednostce g - przyspieszenia ziemskiego
+
+float X_mem = 0; // Poprzednia wartość
+float Y_mem = 0; // Poprzednia wartość
+float Z_mem = 0; // Poprzednia wartość
+
+float X_roznica = 0; // Przechowywuje roznice
+float Y_roznica = 0; // Przechowywuje roznice
+float Z_roznica = 0; // Przechowywuje roznice
+
 
 /* USER CODE END PV */
 
@@ -76,21 +106,19 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef* htim)
 }
 
 void Setup_UART_BT(UART_HandleTypeDef * UART){
-
 	HAL_Delay(1000);
-	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
-	HAL_Delay(100); //Przywrocenie ustawien fabrycznych
-	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
-	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
-	HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
-	HAL_Delay(100); //Zmiana nazwy na  BT_STM
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
-	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
-	HAL_Delay(100); //Ustawienie predkosci, ilosci bitow stop, parzystosci
-	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
+		HAL_Delay(100); //Przywrocenie ustawien fabrycznych
+		/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+		HAL_Delay(100);
+		HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
+		HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
+		HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
+		HAL_Delay(100); //Zmiana nazwy na  BT_STM
+		HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
+		HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
+		HAL_Delay(100); //Ustawienie predkosci, ilosci bitow stop, parzystosci
+		HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
 }
 
@@ -133,6 +161,13 @@ int main(void)
 
   //Inicjalizacja ustawien dla modulu HC-05
   Setup_UART_BT(&huart2);
+  uint8_t USTAWIENIA = ACC_USTAWIENIA;
+  uint8_t RESOLUTION = ACC_SET_4G;
+
+  //AKCELEROMETR - aktywacja, 100Hz, oś XYZ
+  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG1_A, 1, &USTAWIENIA, 1, 100);
+  //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
+  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
 
   //TIM11 - 66Hz
   HAL_TIM_Base_Start_IT(&htim11);
@@ -145,23 +180,24 @@ int main(void)
 
   while (1)
   {
-	   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+	  if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+	  		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-			   if (flaga == 1){
-				   Rozmiar = sprintf((char *)Wiadomosc, "A:X Y Z Z:X Y Z\r\n");
+	  				   if (flaga == 1){
+	  					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
 
-				   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+	  			 flaga = 0;
+	  			}
+	  	}
 
-				   flaga = 0;
-			   }
-		   }
-	   }
+	  }
+	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+	  HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+	      /* USER CODE END WHILE */
 
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+	      /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
