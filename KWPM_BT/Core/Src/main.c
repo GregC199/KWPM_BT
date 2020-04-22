@@ -30,10 +30,10 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <limits.h>
-#include <string.h>
 #include <math.h>
+#include <string.h>
 /* USER CODE END Includes */
-// a
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
@@ -42,6 +42,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+//AKCELEROMETR
 #define ACC_USTAWIENIA 0x57
 #define ACC_ADRES (0x19 << 1)
 #define ACC_CTRL_REG1_A 0x20
@@ -75,6 +76,14 @@ float X_g = 0; // Zawiera przyspieszenie w osi X w jednostce g - przyspieszenia 
 float Y_g = 0; // Zawiera przyspieszenie w osi Y w jednostce g - przyspieszenia ziemskiego
 float Z_g = 0; // Zawiera przyspieszenie w osi Z w jednostce g - przyspieszenia ziemskiego
 
+float X_mem = 0; // Poprzednia wartość
+float Y_mem = 0; // Poprzednia wartość
+float Z_mem = 0; // Poprzednia wartość
+
+float X_roznica = 0; // Przechowywuje roznice
+float Y_roznica = 0; // Przechowywuje roznice
+float Z_roznica = 0; // Przechowywuje roznice
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,22 +106,27 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef* htim)
 }
 
 void Setup_UART_BT(UART_HandleTypeDef * UART){
+
 	HAL_Delay(1000);
-		HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
-		HAL_Delay(100); //Przywrocenie ustawien fabrycznych
-		/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
-		HAL_Delay(100);
-		HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
-		HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
-		HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
-		HAL_Delay(100); //Zmiana nazwy na  BT_STM
-		HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
-		HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
-		HAL_Delay(100); //Ustawienie predkosci, ilosci bitow stop, parzystosci
-		HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
+	HAL_Delay(100); //Przywrocenie ustawien fabrycznych
+	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
+	HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
+	HAL_Delay(100); //Zmiana nazwy na  BT_STM
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
+	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
+
+
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
+	HAL_Delay(100);
+
+
+	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
 }
-
 
 /* USER CODE END 0 */
 
@@ -150,54 +164,69 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  //Inicjalizacja ustawien dla modulu HC-05
   Setup_UART_BT(&huart2);
   uint8_t USTAWIENIA = ACC_USTAWIENIA;
   uint8_t RESOLUTION = ACC_SET_4G;
-
-  //AKCELEROMETR - aktywacja, 100Hz, oś XYZ
-  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG1_A, 1, &USTAWIENIA, 1, 100);
-  //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
-  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
-
-  //TIM11 - 66Hz
-  HAL_TIM_Base_Start_IT(&htim11);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
+  //AKCELEROMETR - aktywacja, 100Hz, oś XYZ
+   HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG1_A, 1, &USTAWIENIA, 1, 100);
+   //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
+   HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
+
+   //TIM11 - 66Hz
+   HAL_TIM_Base_Start_IT(&htim11);
 
   while (1)
   {
-	  if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+	   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-	  		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-	  			if (flaga == 1){
-	  				HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
-
-	  				 X = ((Dane[1] << 8) | Dane[0]);
-	  				 Y = ((Dane[3] << 8) | Dane[2]);
-	  				 Z = ((Dane[5] << 8) | Dane[4]);
-
-	  				 X_g = ((float) X * 4.0) / (float) INT16_MAX;
-					 Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
-					 Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
+				   if (flaga == 1){
+					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES,
 
 
-	  			 flaga = 0;
-	  			}
-	  	}
+					   ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
+					   X = ((Dane[1] << 8) | Dane[0]);
+					   Y = ((Dane[3] << 8) | Dane[2]);
+					   Z = ((Dane[5] << 8) | Dane[4]);
 
-	  }
-	  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
-	      /* USER CODE END WHILE */
+					   X_g = ((float) X * 4.0) / (float) INT16_MAX;
+					   Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
+					   Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
 
-	      /* USER CODE BEGIN 3 */
+					   X_roznica = fabs(X_mem - X_g);
+					   Y_roznica = fabs(Y_mem - Y_g);
+					   Z_roznica = fabs(Z_mem - Z_g);
+
+					   if(X_roznica > 0.1)HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+					   if(Y_roznica > 0.1)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+					   if(Z_roznica > 0.1)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+
+					   Rozmiar = sprintf((char *)Wiadomosc, "X:%f Y:%f Z:%f\r\n", X_g,Y_g,Z_g);
+
+					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+
+					   X_mem = X_g;
+					   Y_mem = Y_g;
+					   Z_mem = Z_g;
+
+
+					   flaga = 0;
+				   }
+		   	   }
+
+		   }
+	   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+	   HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+	   HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+    /* USER CODE END WHILE */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
