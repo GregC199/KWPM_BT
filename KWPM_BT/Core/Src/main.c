@@ -25,6 +25,8 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+// #include "kalman.h"
+#include "matrix.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -52,6 +54,16 @@
 #define ACC_WSZYSTKIE_OSIE_ZCZYTANIE (ACC_MULTI_READ | ACC_ZCZYTANIE_POCZATEK)
 #define ACC_SET_4G 0x10
 
+//ZYROSKOP
+#define ZYR_REG1_A 0x20
+#define ZYR_USTAWIENIA 0x0F
+#define ZYR_MULTIREAD 0x40
+#define ZYR_READ 0x80
+#define ZYR_ZCZYTANIE_POCZATEK 0x28
+#define ZYR_WSZYSTKIE_OSIE_ZCZYTANIE (ZYR_READ | ZYR_MULTIREAD | ZYR_ZCZYTANIE_POCZATEK)
+
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -67,7 +79,7 @@
 int8_t Wiadomosc[200];
 int16_t Rozmiar;
 
-uint8_t Dane[6]; // Tablica przechowujaca wszystkie bajty zczytane z akcelerometru
+uint8_t Dane[6]; // Tablica przechowujaca wszystkie bajty zczytane z akcelerometru lub zyroskopu
 int16_t X = 0; // Zczytane dane z osi X w formie zlaczonych w całość bajtów starszych i młodszych
 int16_t Y = 0; // Zczytane dane z osi Y w formie zlaczonych w całość bajtów starszych i młodszych
 int16_t Z = 0; // Zczytane dane z osi Z w formie zlaczonych w całość bajtów starszych i młodszych
@@ -84,6 +96,14 @@ float X_roznica = 0; // Przechowywuje roznice
 float Y_roznica = 0; // Przechowywuje roznice
 float Z_roznica = 0; // Przechowywuje roznice
 
+float X_kat = 0; // Zawiera wartosc przyspieszenia katowego w osi X w jednostce dps - degrees per second
+float Y_kat = 0; // Zawiera wartosc przyspieszenia katowego w osi Y w jednostce dps - degrees per second
+float Z_kat = 0; // Zawiera wartosc przyspieszenia katowego w osi Z w jednostce dps - degrees per second
+
+float roll = 0; //kat roll dla filtru komplementarnego
+float pitch = 0; //kat pitch dla filtru komplementarnego
+
+float x_post[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -109,24 +129,156 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
-	HAL_Delay(100); //Przywrocenie ustawien fabrycznych
-	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
 	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
-	HAL_Delay(100); //Wyzerowanie sparowanych urzadzen
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
-	HAL_Delay(100); //Zmiana nazwy na  BT_STM
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
-	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave
-
-
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
+	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\n", strlen("AT+ORGL\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\n", strlen("AT+RMAAD\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=Slave\n", strlen("AT+NAME=Slave\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\n", strlen("AT+ROLE=0\n"), 100);
+	HAL_Delay(100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\n", strlen("AT+UART=115200,0,0\n"), 100);
 	HAL_Delay(100);*/
-
-
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
 }
+
+void Setup_L3GD20(SPI_HandleTypeDef* spi){
+
+	uint8_t tmp;
+
+	//Rozpoczecie komunikacji spi z zyroskopem
+	HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_RESET);
+
+	tmp = ZYR_REG1_A;
+	HAL_SPI_Transmit(spi, &tmp, 1, 20);
+	tmp = ZYR_USTAWIENIA;
+	HAL_SPI_Transmit(spi, &tmp, 1, 20);
+
+	HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
+}
+
+void L3GD20_MultiRead(SPI_HandleTypeDef* spi){
+
+	uint8_t tmp;
+
+	//Rozpoczecie komunikacji spi z zyroskopem
+	HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_RESET);
+
+	//zczytanie wartosci wskazan 3ech osi naraz (6 bajtow = 3x(mlodszy i starszy bajt))
+	tmp = ZYR_WSZYSTKIE_OSIE_ZCZYTANIE;
+	HAL_SPI_Transmit(spi, &tmp, 1, 100);//adres wraz z multireadem
+	HAL_SPI_Receive(spi, Dane, 6, 100);
+
+	HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void filtrKalmana(float xg, float yg, float zg, float xa, float ya, float za){
+
+	float dt;
+	// portTickType ticks; ?
+
+	float A[4], B[2], C[2];
+	float std_dev_v, std_dev_w;
+	float V[4], W[1];
+	float P_pri[4], P_post[4];
+	float x_pri[2];
+	float eps[1], S[1], K[2];
+	float u[1], y[1];
+	float acc_x, acc_y;
+
+	float Ax[2], Bu[2];
+	float AP[4], AT[4], APAT[4];
+	float Cx[1];
+	float CP[2], CPCT[1];
+	float PCT[2], S1[1];
+	float Keps[2];
+	float KS[2], KSKT[2];
+
+
+	dt = 0.02;
+
+	A[0] = 1;
+	A[1] = -dt;
+	A[2] = 0;
+	A[3] = 1;
+
+	B[0] = dt;
+	B[1] = 0;
+
+	C[0] = 1;
+	C[1] = 0;
+
+	std_dev_v = 1;
+	std_dev_w = 2;
+	V[0] = std_dev_v * std_dev_v * dt;
+	V[1] = 0;
+	V[2] = 0;
+	V[3] = std_dev_v * std_dev_v * dt;
+	W[0] = std_dev_w * std_dev_w;
+
+	/* Wartosci poczatkowe filtru */
+	P_post[0] = 1;
+	P_post[1] = 0;
+	P_post[2] = 0;
+	P_post[3] = 1;
+
+	HAL_Delay(150);
+
+	acc_x = xa;
+	acc_y = ya;
+	x_post[0] = atan(acc_x / acc_y) * 180 / M_PI;
+	x_post[1] = 0;
+
+	while(1){
+
+		// I
+		u[0] = zg * 250 / 32768;
+		matrix_2x2_mul_2x1(A, x_post, Ax);
+		mx2x1_tim_mx1x1(B, u, Bu);
+		matrix_2x1_add_2x1(Ax, Bu, x_pri);
+
+		// II
+		matrix_2x2_mul_2x2(A, P_post, AP);
+		matrix_2x2_trans(A, AT);
+		matrix_2x2_mul_2x2(AP, AT, APAT);
+		matrix_2x2_add_2x2(APAT, V, P_pri);
+
+		// III
+		acc_x = xa;
+		acc_y = ya;
+		y[0] = atan(acc_x / acc_y) * 180 / M_PI;
+		mx1x2_tim_mx2x1(C, x_pri, Cx);
+		eps[0] = y[0] - Cx[0];
+
+		// IV
+		mx1x2_tim_mx2x2(C, P_pri, CP);
+		mx1x2_tim_mx2x1(C, C, CPCT);
+		S[0] = CPCT[0] + W[0];
+
+		// V
+		matrix_2x2_mul_2x1(P_pri, C, PCT);
+		S1[0] = 1 / S[0];
+		mx2x1_tim_mx1x1(PCT, S1, K);
+
+		// VI
+		mx2x1_tim_mx1x1(K, eps, Keps);
+		matrix_2x1_add_2x1(x_pri, Keps, x_post);
+
+		// VII
+		mx2x1_tim_mx1x1(K, S, KS);
+		matrix_2x1_mul_1x2(KS, K, KSKT);
+		matrix_2x2_sub_2x2(P_pri, KSKT, P_post);
+	}
+
+
+}
+
 
 /* USER CODE END 0 */
 
@@ -163,23 +315,33 @@ int main(void)
   MX_TIM11_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  //Zablokowanie komunikacji z zyroskopem
+  HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
 
+  //Wywolanie inicjalizacji ustawien zyroskopu
   //Setup_UART_BT(&huart2);
+
+  //AKCELEROMETR - zmienne pomocnicze do komunikacji z akcelerometrem
   uint8_t USTAWIENIA = ACC_USTAWIENIA;
   uint8_t RESOLUTION = ACC_SET_4G;
+
+  //AKCELEROMETR - aktywacja, 100Hz, oś XYZ
+  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG1_A, 1, &USTAWIENIA, 1, 100);
+
+  //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
+  HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
+
+  //ZYROSKOP - setup
+  Setup_L3GD20(&hspi1);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  //AKCELEROMETR - aktywacja, 100Hz, oś XYZ
-   HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG1_A, 1, &USTAWIENIA, 1, 100);
-   //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
-   HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
 
-   //TIM11 - 50Hz
-   HAL_TIM_Base_Start_IT(&htim11);
+  //TIM11 - 50Hz
+  HAL_TIM_Base_Start_IT(&htim11);
 
   while (1)
   {
@@ -188,10 +350,7 @@ int main(void)
 		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
 				   if (flaga == 1){
-					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES,
-
-
-					   ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
+					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
 					   X = ((Dane[1] << 8) | Dane[0]);
 					   Y = ((Dane[3] << 8) | Dane[2]);
 					   Z = ((Dane[5] << 8) | Dane[4]);
@@ -204,18 +363,27 @@ int main(void)
 					   Y_roznica = fabs(Y_mem - Y_g);
 					   Z_roznica = fabs(Z_mem - Z_g);
 
-					   if(X_roznica > 0.1)HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-					   if(Y_roznica > 0.1)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-					   if(Z_roznica > 0.1)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+					   L3GD20_MultiRead(&hspi1);
 
-					   Rozmiar = sprintf((char *)Wiadomosc, "X:%f Y:%f Z:%f\r\n", X_g,Y_g,Z_g);
+					   X_kat = ((float)((int16_t)((Dane[1] << 8) | Dane[0])) * 250.0)/(float) INT16_MAX;
+					   Y_kat = ((float)((int16_t)((Dane[3] << 8) | Dane[2])) * 250.0)/(float) INT16_MAX;
+					   Z_kat = ((float)((int16_t)((Dane[5] << 8) | Dane[4])) * 250.0)/(float) INT16_MAX;
+
+					   if(X_roznica > 0.15)HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+					   if(Y_roznica > 0.15)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+					   if(Z_roznica > 0.15)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+
+					   filtrKalmana(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat);
+
+					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f\n", X_g,Y_g, Z_g - 1.0, X_kat,Y_kat,Z_kat);
 
 					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+
+					   HAL_Delay(5);
 
 					   X_mem = X_g;
 					   Y_mem = Y_g;
 					   Z_mem = Z_g;
-
 
 					   flaga = 0;
 				   }
@@ -255,7 +423,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
+  RCC_OscInitStruct.PLL.PLLQ = 8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -267,7 +435,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
