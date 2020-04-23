@@ -25,7 +25,6 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-// #include "kalman.h"
 #include "matrix.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -103,7 +102,26 @@ float Z_kat = 0; // Zawiera wartosc przyspieszenia katowego w osi Z w jednostce 
 float roll = 0; //kat roll dla filtru komplementarnego
 float pitch = 0; //kat pitch dla filtru komplementarnego
 
+
+
+//KALMAN
 float x_post[2];
+float A[4], B[2], C[2];
+float std_dev_v, std_dev_w;
+float V[4], W[1];
+float P_pri[4], P_post[4];
+float x_pri[2];
+float eps[1], S[1], K[2];
+float u[1], y[1];
+float acc_x, acc_y;
+
+float Ax[2], Bu[2];
+float AP[4], AT[4], APAT[4];
+float Cx[1];
+float CP[2], CPCT[1];
+float PCT[2], S1[1];
+float Keps[2];
+float KS[2], KSKT[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -175,30 +193,34 @@ void L3GD20_MultiRead(SPI_HandleTypeDef* spi){
 	HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
 }
 
+/////////////////////////////////////////////////////////////
+void Filtr_komplementarny(float xg, float yg, float zg, float xa, float ya, float za, float przyrost){
+
+	float dt = 0.02;//50 Hz = 0.02s
+	float pitchAcc; //zmienna przechowujaca wskazanie akcelerometru dla danego kata
+	float rollAcc;  //zmienna przechowujaca wskazanie akcelerometru dla danego kata
+
+	roll+= xa * dt;
+	pitch+= ya * dt;
+
+	//obliczenie sumy przyspieszen w celu wyeliminowania drgan
+
+	if (przyrost > 0.4){
+
+        //Obliczenia dla katu roll
+        rollAcc = atan2f(xg, zg) * 180 / M_PI;
+        roll = roll * 0.98 + rollAcc * 0.02;
+
+		//Obliczenia dla katu pitch
+        pitchAcc = atan2f(yg, zg) * 180 / M_PI;
+        pitch = pitch * 0.98 + pitchAcc * 0.02;
+
+	}
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void filtrKalmana(float xg, float yg, float zg, float xa, float ya, float za){
-
+void KalmanInit(float xg, float yg, float zg){
 	float dt;
-	// portTickType ticks; ?
-
-	float A[4], B[2], C[2];
-	float std_dev_v, std_dev_w;
-	float V[4], W[1];
-	float P_pri[4], P_post[4];
-	float x_pri[2];
-	float eps[1], S[1], K[2];
-	float u[1], y[1];
-	float acc_x, acc_y;
-
-	float Ax[2], Bu[2];
-	float AP[4], AT[4], APAT[4];
-	float Cx[1];
-	float CP[2], CPCT[1];
-	float PCT[2], S1[1];
-	float Keps[2];
-	float KS[2], KSKT[2];
 
 
 	dt = 0.02;
@@ -228,14 +250,15 @@ void filtrKalmana(float xg, float yg, float zg, float xa, float ya, float za){
 	P_post[2] = 0;
 	P_post[3] = 1;
 
-	HAL_Delay(150);
-
-	acc_x = xa;
-	acc_y = ya;
+	acc_x = xg;
+	acc_y = yg;
 	x_post[0] = atan(acc_x / acc_y) * 180 / M_PI;
 	x_post[1] = 0;
 
-	while(1){
+	HAL_Delay(150);
+}
+
+void filtrKalmana(float xg, float yg, float zg){
 
 		// I
 		u[0] = zg * 250 / 32768;
@@ -250,8 +273,8 @@ void filtrKalmana(float xg, float yg, float zg, float xa, float ya, float za){
 		matrix_2x2_add_2x2(APAT, V, P_pri);
 
 		// III
-		acc_x = xa;
-		acc_y = ya;
+		acc_x = xg;
+		acc_y = yg;
 		y[0] = atan(acc_x / acc_y) * 180 / M_PI;
 		mx1x2_tim_mx2x1(C, x_pri, Cx);
 		eps[0] = y[0] - Cx[0];
@@ -274,7 +297,6 @@ void filtrKalmana(float xg, float yg, float zg, float xa, float ya, float za){
 		mx2x1_tim_mx1x1(K, S, KS);
 		matrix_2x1_mul_1x2(KS, K, KSKT);
 		matrix_2x2_sub_2x2(P_pri, KSKT, P_post);
-	}
 
 
 }
@@ -318,6 +340,7 @@ int main(void)
   //Zablokowanie komunikacji z zyroskopem
   HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
 
+
   //Wywolanie inicjalizacji ustawien zyroskopu
   //Setup_UART_BT(&huart2);
 
@@ -333,6 +356,9 @@ int main(void)
 
   //ZYROSKOP - setup
   Setup_L3GD20(&hspi1);
+
+  //Kalman init
+  KalmanInit(X_g,Y_g,Z_g);
 
   /* USER CODE END 2 */
 
@@ -373,9 +399,11 @@ int main(void)
 					   if(Y_roznica > 0.15)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
 					   if(Z_roznica > 0.15)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
 
-					   filtrKalmana(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat);
+					   filtrKalmana(X_g,Y_g,Z_g);
 
-					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f\n", X_g,Y_g, Z_g - 1.0, X_kat,Y_kat,Z_kat);
+					   Filtr_komplementarny(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat,X_roznica+Y_roznica+Z_roznica);
+
+					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f Rkom:%f Pkom:%f\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch);
 
 					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
 
