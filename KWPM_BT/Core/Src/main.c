@@ -117,11 +117,11 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
 	HAL_Delay(100); //Zmiana nazwy na  BT_STM
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
-	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave*/
+	HAL_Delay(100); //Ustawienie roli urzadzenia w tryb slave
 
 
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
-	HAL_Delay(100);
+	HAL_Delay(100);*/
 
 
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
@@ -164,7 +164,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  Setup_UART_BT(&huart2);
+  //Setup_UART_BT(&huart2);
   uint8_t USTAWIENIA = ACC_USTAWIENIA;
   uint8_t RESOLUTION = ACC_SET_4G;
 
@@ -178,7 +178,7 @@ int main(void)
    //AKCELEROMETR - zmiana zakresu pomiarowego z +-2g na +-4g
    HAL_I2C_Mem_Write(&hi2c1, ACC_ADRES, ACC_CTRL_REG4_A, 1, &RESOLUTION, 1, 100);
 
-   //TIM11 - 66Hz
+   //TIM11 - 50Hz
    HAL_TIM_Base_Start_IT(&htim11);
 
   while (1)
@@ -226,6 +226,7 @@ int main(void)
 	   HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
 	   HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
