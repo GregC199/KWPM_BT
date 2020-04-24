@@ -25,10 +25,10 @@
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include "matrix.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "matrix.h"
 #include <stdio.h>
 #include <limits.h>
 #include <math.h>
@@ -147,16 +147,16 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\n", strlen("AT+ORGL\n"), 100);
-	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\n", strlen("AT+RMAAD\n"), 100);
-	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=Slave\n", strlen("AT+NAME=Slave\n"), 100);
-	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\n", strlen("AT+ROLE=0\n"), 100);
-	HAL_Delay(100);
-	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\n", strlen("AT+UART=115200,0,0\n"), 100);
+	HAL_Delay(100);                       //Przywrocenie ustawien fabrycznych
+	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+	HAL_Delay(100);                        //Wyzerowanie sparowanych urzadzen
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
+	HAL_Delay(100);                               //Zmiana nazwy na  BT_STM
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+NAME=BT_STM\r\n", strlen("AT+NAME=BT_STM\r\n"), 100);
+	HAL_Delay(100);                        //Ustawienie roli urzadzenia w tryb slave
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
+	HAL_Delay(100);                    //Ustawienie predkosci, ilosci bitow stop, parzystosci
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
 	HAL_Delay(100);*/
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
@@ -252,7 +252,7 @@ void KalmanInit(float xg, float yg, float zg){
 
 	acc_x = xg;
 	acc_y = yg;
-	x_post[0] = atan(acc_x / acc_y) * 180 / M_PI;
+	x_post[0] = atan2f(acc_y,acc_x) * 180 / M_PI;
 	x_post[1] = 0;
 
 	HAL_Delay(150);
@@ -275,7 +275,7 @@ void filtrKalmana(float xg, float yg, float zg){
 		// III
 		acc_x = xg;
 		acc_y = yg;
-		y[0] = atan(acc_x / acc_y) * 180 / M_PI;
+		y[0] = atan2f(acc_y,acc_x ) * 180 / M_PI;
 		mx1x2_tim_mx2x1(C, x_pri, Cx);
 		eps[0] = y[0] - Cx[0];
 
@@ -337,6 +337,7 @@ int main(void)
   MX_TIM11_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+
   //Zablokowanie komunikacji z zyroskopem
   HAL_GPIO_WritePin(Zyro_SS_GPIO_Port, Zyro_SS_Pin, GPIO_PIN_SET);
 
@@ -365,7 +366,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
   //TIM11 - 50Hz
   HAL_TIM_Base_Start_IT(&htim11);
 
@@ -376,11 +376,13 @@ int main(void)
 		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
 				   if (flaga == 1){
+					   //Zczytanie kolejnych 6ściu bajtów wskazań z kolejno osi x, y, z (3x(mlodszy + starszy bajt))
 					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
 					   X = ((Dane[1] << 8) | Dane[0]);
 					   Y = ((Dane[3] << 8) | Dane[2]);
 					   Z = ((Dane[5] << 8) | Dane[4]);
 
+					   //Przeksztalcenie w faktyczna jednostke wskazan
 					   X_g = ((float) X * 4.0) / (float) INT16_MAX;
 					   Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
 					   Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
@@ -388,6 +390,7 @@ int main(void)
 					   X_roznica = fabs(X_mem - X_g);
 					   Y_roznica = fabs(Y_mem - Y_g);
 					   Z_roznica = fabs(Z_mem - Z_g);
+
 
 					   L3GD20_MultiRead(&hspi1);
 
@@ -403,7 +406,7 @@ int main(void)
 
 					   Filtr_komplementarny(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat,X_roznica+Y_roznica+Z_roznica);
 
-					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f Rkom:%f Pkom:%f\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch);
+					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f Rkom:%f Pkom:%f Xpost0:%f Xpost1:%f\r\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],x_post[1]);
 
 					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
 
