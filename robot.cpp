@@ -60,6 +60,12 @@ void Robot::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
     painter->drawRect(rec);
 }
 
+void Robot::robotControl(int t_angle, int t_speed)
+{
+    this->angle = t_angle;
+    setRotation(t_angle);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief Robot::advance

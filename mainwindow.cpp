@@ -35,11 +35,15 @@ MainWindow::MainWindow(QWidget *parent) :
     RobotScene->addLine(RightLine, mypen);
     RobotScene->addLine(LeftLine, mypen);
 
-    int robotCount = 1;
-    for(int i = 0; i <robotCount; i++){
-        Robot *rob1 = new Robot();
-        RobotScene->addItem(rob1);
-    }
+    // Utworzenie robota i wyswietlenie na scenie
+    Robot *rob1 = new Robot();
+    RobotScene->addItem(rob1);
+
+    // Wstepna kontrola ruchu robota
+    rob1->robotControl(-90, 15);
+
+
+
 
 
 
