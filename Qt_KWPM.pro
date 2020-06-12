@@ -6,6 +6,9 @@
 
 QT       += core gui
 
+#wykresy
+QT += charts
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Qt_KWPM
@@ -25,10 +28,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    wykres.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    wykres.h
 
 FORMS += \
         mainwindow.ui
