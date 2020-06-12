@@ -1,6 +1,4 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include "robot.h"
 
 
 
@@ -54,8 +52,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //tworzymy diody
     tworz_diode();
 
-    //zapalamy czerwony kolor
-    zapal_czerwone();
+    //tworzenie wykresow
+    stworz_wykresy();
 
     //wywolanie inicjalizacji obslugi komunikacji bluetooth
     obsluga_bt();
@@ -65,11 +63,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     inicjalizuj_info();
 
+    //nadpisanie/utworzenie pliku log_polaczenia.txt
+    zapis.open("log_polaczenia.txt",std::ios_base::out);
+    zapis.close();
 
+    //otwarcie strumienia zapisu danych typu dodawania na koniec pliku
+    zapis.open("log_polaczenia.txt", std::ios_base::app);
+
+    //otwarcie czytania z pliku log_polaczenia.txt
+    czytanie.open("log_polaczenia.txt",std::ios_base::in);
 
 
     //rozpoczecie zliczania czasu dla osi czasu na wykresach
     this->pomiar.start();
+
+    //ustawienie statusu polaczenia jako startowego widgetu
+    ui->tabWidget->setCurrentWidget(ui->Status_polaczenia);
 
 }
 
@@ -106,6 +115,93 @@ void MainWindow::informacje_bluetooth(){
     ui->nazwy_info_pol->append(this->uuid_polaczonego );
     ui->nazwy_info_pol->append(this->typ_polaczenia);
     ui->nazwy_info_pol->append(this->data_polaczenia);
+
+}
+
+void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
+
+    //zmienne pomocnicze do realizacji zczytywania danych
+    char a[10],b[10],c[10],d[10],e[10],f[10],g[10],h[10],i[10],j[10],k[10];
+    float  acc_x = 0.0;
+    float  acc_y = 0.0;
+    float  acc_z = 0.0;
+    float  gyr_x = 0.0;
+    float  gyr_y = 0.0;
+    float  gyr_z = 0.0;
+    float  roll = 0.0;
+    float  pitch = 0.0;
+    float  robot_predkosc = 0.0;
+    float  kalman_x = 0.0;
+
+    //zczytywanie kolejnych danych z pliku
+    czytanie >> a;
+    czytanie >> acc_x;
+    czytanie >> b;
+    czytanie >> acc_y;
+    czytanie >> c;
+    czytanie >> acc_z;
+    czytanie >> d;
+    czytanie >> gyr_x;
+    czytanie >> e;
+    czytanie >> gyr_y;
+    czytanie >> f;
+    czytanie >> gyr_z;
+    czytanie >> g;
+    czytanie >> roll;
+    czytanie >> h;
+    czytanie >> pitch;
+    czytanie >> i;
+    czytanie >> kalman_x;
+    czytanie >> j;
+    czytanie >> k;
+
+
+    aktualizuj_wykres(robot_predkosc,gyr_x,gyr_y,gyr_z,roll,pitch,kalman_x,czas_zmierzony);
+
+}
+
+void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, unsigned long long czas){
+
+    //os czasu - zmienne pomocnicze sluzace do jej przesuwania
+    long double test = ((long double)czas)/1000;
+    long double koniec = 0.0;
+    long double memory;
+    long double poczatek = 0.0;
+
+    //przesuniecie osi czasu
+    while(koniec < test){
+        memory=koniec;
+        koniec=koniec+60;
+    }
+    if(koniec>60.0)poczatek = ceil(memory);
+
+    //sprawdzenie czy nastąpiła zmiana osi czasy
+    if(timeline_robot->max() != ceil(koniec)){
+
+        this->timeline_robot->setRange(poczatek,ceil(koniec));
+        this->timeline_gyr_x->setRange(poczatek,ceil(koniec));
+        this->timeline_gyr_y->setRange(poczatek,ceil(koniec));
+        this->timeline_gyr_z->setRange(poczatek,ceil(koniec));
+    }
+
+    //dodawanie nowych punktow na wykresie
+    //robot
+    this->series_robot->append(test,rob_predkosc);
+
+    //gyrx
+    this->series_gyr_wykres_x->append(test,g_x);
+
+    this->series_kom_wykres_x->append(test,rkom);
+
+    this->series_kalman_wykres_x->append(test,x_kalman);
+
+    //gyry
+    this->series_gyr_wykres_y->append(test,g_y);
+
+    this->series_kom_wykres_y->append(test,pkom);
+
+    //gyrz
+    this->series_gyr_wykres_z->append(test,g_z);
 
 }
 
