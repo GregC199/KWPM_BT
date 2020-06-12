@@ -1839,7 +1839,7 @@ background-color: rgb(255, 255, 255);</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_10">
         <item row="0" column="0" rowspan="2">
-         <widget class="QGraphicsView" name="Animation_graphicsView">
+         <widget class="QGraphicsView" name="Robot_graphicsView">
           <property name="minimumSize">
            <size>
             <width>660</width>

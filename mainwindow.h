@@ -51,9 +51,8 @@ private:
     Ui::MainWindow *ui;
 
     // Animacja robota
-    QGraphicsScene *AnimationScene;
-    QTimer *animationTimer;
-    Robot *rob1;
+    QGraphicsScene *RobotScene;
+    QTimer *RobotTimer;
 
     //diody
     void tworz_diode();

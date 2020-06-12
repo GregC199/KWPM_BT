@@ -32,6 +32,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+    robot.cpp \
     wykres.cpp \
     wykresy.cpp \
     bluetooth.cpp \
@@ -39,6 +40,7 @@ SOURCES += \
 
 HEADERS += \
         mainwindow.h \
+    robot.h \
     wykres.h
 
 FORMS += \

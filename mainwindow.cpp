@@ -2,22 +2,50 @@
 #include "ui_mainwindow.h"
 #include "robot.h"
 
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    // Dodanie animacji
-    AnimationScene = new QGraphicsScene(this);
-    ui->Animation_graphicsView->setScene(AnimationScene);
 
-    rob1 = new Robot();
-    AnimationScene->addItem(rob1);
+    // Dodanie sceny
+    RobotScene = new QGraphicsScene(this);
+    ui->Robot_graphicsView->setScene(RobotScene);
+    ui->Robot_graphicsView->setRenderHint(QPainter::Antialiasing);
+    RobotScene->setSceneRect(-200, -200, 600, 450);
+
+    QPen mypen = QPen(Qt::red);
+    QLineF TopLine(RobotScene->sceneRect().topLeft(),
+                   RobotScene->sceneRect().topRight());
+
+    QLineF BottomLine(RobotScene->sceneRect().bottomLeft(),
+                   RobotScene->sceneRect().bottomRight());
+
+    QLineF LeftLine(RobotScene->sceneRect().topLeft(),
+                   RobotScene->sceneRect().bottomLeft());
+
+    QLineF RightLine(RobotScene->sceneRect().topRight(),
+                   RobotScene->sceneRect().bottomRight());
+
+    RobotScene->addLine(TopLine, mypen);
+    RobotScene->addLine(BottomLine, mypen);
+    RobotScene->addLine(RightLine, mypen);
+    RobotScene->addLine(LeftLine, mypen);
+
+    int robotCount = 1;
+    for(int i = 0; i <robotCount; i++){
+        Robot *rob1 = new Robot();
+        RobotScene->addItem(rob1);
+    }
 
 
 
-
+    RobotTimer = new QTimer(this);
+    connect(RobotTimer, SIGNAL(timeout()), RobotScene, SLOT(advance()));
+    RobotTimer->start(100);
 
     //tworzymy diody
     tworz_diode();

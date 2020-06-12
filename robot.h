@@ -12,8 +12,14 @@ public:
 
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
-protected:
 
+protected:
+    void advance(int phase) override;
+
+private:
+    qreal angle;
+    qreal speed;
+    void doCollision();
 };
 
 #endif // ROBOT_H
