@@ -29,7 +29,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    wykres.cpp
+    wykres.cpp \
+    wykresy.cpp
 
 HEADERS += \
         mainwindow.h \

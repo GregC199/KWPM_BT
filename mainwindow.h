@@ -3,6 +3,14 @@
 
 #include <QMainWindow>
 
+
+//wykresy
+#include <QChartView>
+#include <QtCharts>
+
+//bluetooth
+
+
 namespace Ui {
 class MainWindow;
 }

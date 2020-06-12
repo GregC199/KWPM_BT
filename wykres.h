@@ -17,6 +17,8 @@ public slots:
 
 private:
     QChartView* zmiana_rozmiaru;
+protected:
+    void resizeEvent(QResizeEvent* event);
 };
 
 #endif // WYKRES_H
