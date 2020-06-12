@@ -2,18 +2,30 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "ui_mainwindow.h"
+
 
 
 //wykresy
-#include <QChartView>
 #include <QtCharts>
+#include <QChartView>
+#include <QLineSeries>
+#include <QResizeEvent>
+#include <QFont>
 
 //bluetooth
+#include <QBluetoothDeviceDiscoveryAgent>
+#include <QBluetoothSocket>
+#include <QBluetoothLocalDevice>
+#include <QDebug>
+#include <QDateTime>
+#include <QList>
 
-
+QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
 }
+QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
@@ -25,6 +37,11 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    //diody
+    void tworz_diode();
+    void zapal_czerwone();
+    void zapal_zielone();
 };
 
 #endif // MAINWINDOW_H

@@ -760,6 +760,9 @@ QGroupBox{
                  <property name="text">
                   <string/>
                  </property>
+                 <property name="flat">
+                  <bool>true</bool>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -1043,6 +1046,9 @@ QGroupBox{
                  </property>
                  <property name="text">
                   <string/>
+                 </property>
+                 <property name="flat">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>

@@ -9,6 +9,9 @@ QT       += core gui
 #wykresy
 QT += charts
 
+#bluetooth
+QT += bluetooth
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Qt_KWPM
@@ -30,7 +33,9 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     wykres.cpp \
-    wykresy.cpp
+    wykresy.cpp \
+    bluetooth.cpp \
+    diody.cpp
 
 HEADERS += \
         mainwindow.h \
