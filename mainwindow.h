@@ -4,7 +4,11 @@
 #include <QMainWindow>
 #include "ui_mainwindow.h"
 
+#include <QtCore>
+#include <QtGui>
 
+// Obsulga animacji
+#include <QGraphicsScene>
 
 //wykresy
 #include <QtCharts>
@@ -27,6 +31,7 @@
 #include <stdio.h>
 #include <fstream>
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -43,6 +48,10 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    // Animacja
+    QGraphicsScene *AnimationScene;
+    QTimer *animationTimer;
 
     //diody
     void tworz_diode();

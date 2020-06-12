@@ -7,6 +7,38 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Dodanie animacji
+    AnimationScene = new QGraphicsScene(this);
+    ui->Animation_graphicsView->setScene(AnimationScene);
+    ui->Animation_graphicsView->setRenderHint(QPainter::Antialiasing);
+    AnimationScene->setSceneRect(-200, -200, 300, 300);
+
+    QPen mypen = QPen(Qt::red);
+    QLineF topLine(AnimationScene->sceneRect().topLeft(),
+                   AnimationScene->sceneRect().topRight());
+
+    QLineF bottomLine(AnimationScene->sceneRect().bottomLeft(),
+                   AnimationScene->sceneRect().bottomRight());
+
+    QLineF leftLine(AnimationScene->sceneRect().topLeft(),
+                   AnimationScene->sceneRect().bottomLeft());
+
+    QLineF rightLine(AnimationScene->sceneRect().topRight(),
+                   AnimationScene->sceneRect().bottomRight());
+
+    AnimationScene->addLine(topLine, mypen);
+    AnimationScene->addLine(bottomLine, mypen);
+    AnimationScene->addLine(rightLine, mypen);
+    AnimationScene->addLine(leftLine, mypen);
+
+    animationTimer = new QTimer(this);
+    connect(animationTimer, SIGNAL(animationTimer.timeout()), AnimationScene, SLOT(advance()));
+    animationTimer->start(100);
+
+
+
+
+
     //tworzymy diody
     tworz_diode();
 
