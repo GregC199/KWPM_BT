@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "ui_mainwindow.h"
+#include "robot.h"
 
 #include <QtCore>
 #include <QtGui>
@@ -49,9 +50,10 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    // Animacja
+    // Animacja robota
     QGraphicsScene *AnimationScene;
     QTimer *animationTimer;
+    Robot *rob1;
 
     //diody
     void tworz_diode();
