@@ -47,20 +47,11 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-private:
-    Ui::MainWindow *ui;
+    //wczytanie danych z pliku bedacego logiem polaczenia bluetooth
+    void wczytanie_danych_z_logu(unsigned long long czas_zmierzony);
 
-    // Animacja robota
-    QGraphicsScene *RobotScene;
-    QTimer *RobotTimer;
-
-    //diody
-    void tworz_diode();
-    void zapal_czerwone();
-    void zapal_zielone();
-
-    //pomiar czasu
-    QTime pomiar;
+    //aktualizacja danych na wykresie
+    void aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, unsigned long long czas);
 
     //inicjalizacja obslugi bluetooth
     void obsluga_bt();
@@ -69,12 +60,81 @@ private:
     void inicjalizuj_info();
     void informacje_bluetooth();
 
+    //diody
+    void tworz_diode();
+    void zapal_czerwone();
+    void zapal_zielone();
+
+
+    //tworzenie wykresow
+    void stworz_wykresy();
+
+    //kolejne operacje tworzenia wykresow
+    void utworz_osie();
+
+    void utworz_serie();
+
+    void utworz_wykresy();
+
+    void wizualizuj_wykresy();
+
+    void przypnij_serie_do_osi();
+
+private:
+    Ui::MainWindow *ui;
+
+    // Animacja robota
+    QGraphicsScene *RobotScene;
+    QTimer *RobotTimer;
+
+    //wyswietlanie wykresow
+    QChartView* view_robot;
+    QChartView* view_gyr_wykres_x;
+    QChartView* view_gyr_wykres_y;
+    QChartView* view_gyr_wykres_z;
+
+    //serie z wykresow
+    QLineSeries* series_robot;
+
+    QLineSeries* series_gyr_wykres_x;
+    QLineSeries* series_kom_wykres_x;
+    QLineSeries* series_kalman_wykres_x;
+
+    QLineSeries* series_gyr_wykres_y;
+    QLineSeries* series_kom_wykres_y;
+
+    QLineSeries* series_gyr_wykres_z;
+
+    //osie czasu
+    QValueAxis* timeline_robot;
+    QValueAxis* timeline_gyr_x;
+    QValueAxis* timeline_gyr_y;
+    QValueAxis* timeline_gyr_z;
+
+    //osie wartosci
+    QValueAxis* robot_wartosi;
+    QValueAxis* gyr_x_wartosci_y;
+    QValueAxis* gyr_y_wartosci_y;
+    QValueAxis* gyr_z_wartosci_y;
+
+
+    //wykresy
+    QChart* line_robot;
+    QChart* line_gyr_wykres_x;
+    QChart* line_gyr_wykres_y;
+    QChart* line_gyr_wykres_z;
+
+    //pomiar czasu
+    QTime pomiar;
+
     //obsluga bt
     QBluetoothDeviceDiscoveryAgent* discoveryAgent;
     QBluetoothSocket* socket;
 
     //aktualizacja logu polaczenia
     void addToLogs(QString message);
+
+
 
     //zapis do logu w pliku
     std::ofstream zapis;

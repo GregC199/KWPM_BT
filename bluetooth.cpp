@@ -126,5 +126,8 @@ void MainWindow::socketReadyToRead() {
         int pos = line.lastIndexOf(terminator);
 
         this->addToLogs(line.left(pos));
+
+        //wczytanie danych z logu
+        wczytanie_danych_z_logu(zmierzony);
       }
 }
