@@ -84,6 +84,7 @@ private:
     Ui::MainWindow *ui;
 
     // Animacja robota
+    Robot *rob1;
     QGraphicsScene *RobotScene;
     QTimer *RobotTimer;
 
@@ -165,6 +166,10 @@ private slots:
 
     void socketReadyToRead();
 
+    void on_robotSpeedFwd_pushButton_clicked();
+    void on_robotSpeedBwd_pushButton_clicked();
+    void on_robotTurnLeft_pushButton_clicked();
+    void on_robotTurnRight_pushButton_clicked();
 };
 
 #endif // MAINWINDOW_H

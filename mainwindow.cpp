@@ -34,11 +34,13 @@ MainWindow::MainWindow(QWidget *parent) :
     RobotScene->addLine(LeftLine, mypen);
 
     // Utworzenie robota i wyswietlenie na scenie
-    Robot *rob1 = new Robot();
+    // Robot *rob1 = new Robot();
+    rob1 = new Robot();
     RobotScene->addItem(rob1);
 
     // Wstepna kontrola ruchu robota
-    rob1->robotControl(-90, 15);
+    // Connect buttons and robot velocity
+    // rob1->robotControl(-90, 15);
 
 
 
@@ -208,4 +210,55 @@ void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_robotSpeedFwd_pushButton_clicked()
+{
+    int newRobotSpeed = 0;
+
+    newRobotSpeed = this->rob1->getCurrentRobotSpeed();
+    newRobotSpeed += 1;
+
+    if(newRobotSpeed < 10){
+        this->rob1->setRobotSpeed(newRobotSpeed);
+        qDebug() << newRobotSpeed;
+    }
+}
+
+void MainWindow::on_robotSpeedBwd_pushButton_clicked()
+{
+    int newRobotSpeed;
+
+    newRobotSpeed = this->rob1->getCurrentRobotSpeed();
+    newRobotSpeed -= 1;
+
+    // Predkość -1, aby była maożliwość wycofania po kolizji
+    if(newRobotSpeed >= -1){
+        this->rob1->setRobotSpeed(newRobotSpeed);
+        qDebug() << newRobotSpeed;
+    }
+}
+
+
+void MainWindow::on_robotTurnLeft_pushButton_clicked()
+{
+    int t_currentAngle = this->rob1->getCurrentRobotAngle();
+    t_currentAngle -= 5;
+
+    this->rob1->setRobotAngle(t_currentAngle);
+
+    qDebug() << t_currentAngle;
+
+
+}
+
+void MainWindow::on_robotTurnRight_pushButton_clicked()
+{
+    int t_currentAngle = this->rob1->getCurrentRobotAngle();
+    t_currentAngle += 5;
+
+    this->rob1->setRobotAngle(t_currentAngle);
+
+    qDebug() << t_currentAngle;
+
 }

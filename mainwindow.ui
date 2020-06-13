@@ -1947,6 +1947,50 @@ background-color: rgb(255, 255, 255);</string>
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="robotSpeedFwd_pushButton">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+            </property>
+            <property name="text">
+             <string>Zwiększ prędkość</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="robotSpeedBwd_pushButton">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+            </property>
+            <property name="text">
+             <string>Zmniejsz prędkość</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="robotTurnLeft_pushButton">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
+            </property>
+            <property name="text">
+             <string>Skręć w lewo</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="robotTurnRight_pushButton">
+            <property name="styleSheet">
+             <string notr="true">color: rgb(0, 0, 0);
+background-color: rgb(255, 255, 255);</string>
+            </property>
+            <property name="text">
+             <string>Skręć w prawo</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="verticalSpacer_6">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
