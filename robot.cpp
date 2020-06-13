@@ -73,7 +73,7 @@ void Robot::setRobotAngle(int t_angle)
 
 
 
-// Odczytanie aktualnych wartosci predkosci i orientacji robota
+// Odczytanie aktualnych wartosci polozenia/przemieszczenia robota
 int Robot::getCurrentRobotSpeed() const
 {
     return this->speed;
@@ -83,6 +83,18 @@ int Robot::getCurrentRobotAngle() const
 {
     return this->CurrentRobotAngle;
 }
+
+qreal Robot::getCurrentXPos() const
+{
+    return this->y();
+}
+
+qreal Robot::getCurrentYPos() const
+{
+    return this->x();
+}
+
+
 
 ////////////////////////////////
 // Wykrycie i obsługa kolizji //
@@ -107,6 +119,6 @@ void Robot::doCollision()
 {
     // Zatryczmanie robota na przeszkodzie
     this->setRobotSpeed(0);
-}
+;}
 
 

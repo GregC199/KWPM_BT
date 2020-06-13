@@ -44,9 +44,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(RobotTimer, SIGNAL(timeout()), RobotScene, SLOT(advance()));
     RobotTimer->start(100);
 
+    // Wyswietlenie współrzędnych pozycji początkowej robota
+    this->showCurrentRobotPos();
+
     // Utworzenie i dodanie przeszkody
-    obs1 = new Obstacle(100,100);
-    RobotScene->addItem(obs1);
+    addObstaclesDefaultSet();
 
     //tworzymy diody
     tworz_diode();
@@ -115,6 +117,27 @@ void MainWindow::informacje_bluetooth(){
     ui->nazwy_info_pol->append(this->typ_polaczenia);
     ui->nazwy_info_pol->append(this->data_polaczenia);
 
+}
+
+void MainWindow::addObstaclesDefaultSet()
+{
+    this->addObstacle(200,200);
+    this->addObstacle(-100,-100);
+    this->addObstacle(-90,80);
+    this->addObstacle(120,-30);
+    this->addObstacle(100,100);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief MainWindow::showCurrentRobotPos
+/// Wyswietlenie aktualnych wspolrzednych polozenia robota
+void MainWindow::showCurrentRobotPos()
+{
+    QString x = QString::number(rob1->getCurrentXPos());
+    QString y = QString::number(rob1->getCurrentYPos());
+
+    ui->xPos_lineEdit->setText("X: " + x);
+    ui->yPos_lineEdit->setText("Y: " + y);
 }
 
 void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
@@ -205,6 +228,7 @@ void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float 
     //gyrz
     this->series_gyr_wykres_z->append(test,g_z);
 
+    this->showCurrentRobotPos(); // WYSWIETLENIE WSPOLRZEDNYCH ROBOTA?
 }
 
 MainWindow::~MainWindow()
@@ -227,6 +251,8 @@ void MainWindow::on_robotSpeedFwd_pushButton_clicked()
     if(newRobotSpeed < 10){
         this->rob1->setRobotSpeed(newRobotSpeed);
     }
+
+    this->showCurrentRobotPos();
 }
 
 void MainWindow::on_robotSpeedBwd_pushButton_clicked()
@@ -262,3 +288,11 @@ void MainWindow::on_robotTurnRight_pushButton_clicked()
 
     this->rob1->setRobotAngle(t_currentAngle);
 }
+
+// Dodanie przeszkody
+void MainWindow::addObstacle(int t_x, int t_y)
+{
+    Obstacle *obs = new Obstacle(t_x,t_y);
+    this->RobotScene->addItem(obs);
+}
+

@@ -20,6 +20,9 @@ public:
     int getCurrentRobotSpeed() const;
     int getCurrentRobotAngle() const;
 
+    qreal getCurrentXPos() const;
+    qreal getCurrentYPos() const;
+
 protected:
     void advance(int phase) override;
 
@@ -28,6 +31,7 @@ private:
 
     qreal angle;
     qreal speed;
+
     void doCollision();
 };
 
