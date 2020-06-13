@@ -14,18 +14,17 @@ public:
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
-    void robotControl(int t_angle, int t_speed);
     void setRobotSpeed(int t_speed);
     void setRobotAngle(int t_angle);
 
-    int getCurrentRobotSpeed();
-    int getCurrentRobotAngle();
+    int getCurrentRobotSpeed() const;
+    int getCurrentRobotAngle() const;
 
 protected:
     void advance(int phase) override;
 
 private:
-    int currentRobotAngle; // Aktualny obrot robota
+    int CurrentRobotAngle; // Aktualny obrot robota
 
     qreal angle;
     qreal speed;

@@ -4,8 +4,8 @@
 
 Robot::Robot(){
     // Set init roatation
-    currentRobotAngle = 0;
-    setRobotAngle(currentRobotAngle);
+    CurrentRobotAngle = 0;
+    setRobotAngle(CurrentRobotAngle);
 
     // Set init speed
     speed = 5;
@@ -61,14 +61,7 @@ void Robot::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Robot control functions
-
-void Robot::robotControl(int t_angle, int t_speed)
-{
-    this->angle = t_angle;
-    setRotation(t_angle);
-}
-
+// Ustawienie predkosci i orientacji robota
 void Robot::setRobotSpeed(int t_speed)
 {
     this->speed = t_speed;
@@ -76,21 +69,25 @@ void Robot::setRobotSpeed(int t_speed)
 
 void Robot::setRobotAngle(int t_angle)
 {
-    currentRobotAngle = t_angle; // Wpisanie do aktualnego obrotu, nowego obrotu z argumentu funkcji
-    setRotation(currentRobotAngle);
+    this->CurrentRobotAngle = t_angle; // Wpisanie do aktualnego obrotu, nowego obrotu z argumentu funkcji
+    setRotation(CurrentRobotAngle);
 }
 
-int Robot::getCurrentRobotSpeed()
+
+
+// Odczytanie aktualnych wartosci predkosci i orientacji robota
+int Robot::getCurrentRobotSpeed() const
 {
     return this->speed;
 }
 
-int Robot::getCurrentRobotAngle()
+int Robot::getCurrentRobotAngle() const
 {
-    return this->currentRobotAngle;
+    return this->CurrentRobotAngle;
 }
 
-
+////////////////////////////////
+// Wykrycie i obsługa kolizji //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief Robot::advance
 /// \param phase

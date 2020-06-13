@@ -33,19 +33,9 @@ MainWindow::MainWindow(QWidget *parent) :
     RobotScene->addLine(RightLine, mypen);
     RobotScene->addLine(LeftLine, mypen);
 
-    // Utworzenie robota i wyswietlenie na scenie
-    // Robot *rob1 = new Robot();
+    // Utworzenie i dodanie robota do sceny
     rob1 = new Robot();
     RobotScene->addItem(rob1);
-
-    // Wstepna kontrola ruchu robota
-    // Connect buttons and robot velocity
-    // rob1->robotControl(-90, 15);
-
-
-
-
-
 
     RobotTimer = new QTimer(this);
     connect(RobotTimer, SIGNAL(timeout()), RobotScene, SLOT(advance()));
@@ -212,6 +202,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//////////////////////////////////////////////////////
+// Przyciski sterowania robotem z poziomu aplikacji //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Zmiana prędkości robota o +/-1
 void MainWindow::on_robotSpeedFwd_pushButton_clicked()
 {
     int newRobotSpeed = 0;
@@ -221,7 +215,6 @@ void MainWindow::on_robotSpeedFwd_pushButton_clicked()
 
     if(newRobotSpeed < 10){
         this->rob1->setRobotSpeed(newRobotSpeed);
-        qDebug() << newRobotSpeed;
     }
 }
 
@@ -235,21 +228,18 @@ void MainWindow::on_robotSpeedBwd_pushButton_clicked()
     // Predkość -1, aby była maożliwość wycofania po kolizji
     if(newRobotSpeed >= -1){
         this->rob1->setRobotSpeed(newRobotSpeed);
-        qDebug() << newRobotSpeed;
     }
 }
 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Zmiana orientacji robota o 5 stopni w lewo/prawo
 void MainWindow::on_robotTurnLeft_pushButton_clicked()
 {
     int t_currentAngle = this->rob1->getCurrentRobotAngle();
     t_currentAngle -= 5;
 
+    // Podstawienie t_currentAngle, za CurrentRobotAngle w klasie Robot
     this->rob1->setRobotAngle(t_currentAngle);
-
-    qDebug() << t_currentAngle;
-
-
 }
 
 void MainWindow::on_robotTurnRight_pushButton_clicked()
@@ -258,7 +248,4 @@ void MainWindow::on_robotTurnRight_pushButton_clicked()
     t_currentAngle += 5;
 
     this->rob1->setRobotAngle(t_currentAngle);
-
-    qDebug() << t_currentAngle;
-
 }
