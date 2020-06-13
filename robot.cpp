@@ -24,7 +24,7 @@ Robot::Robot(){
 ///
 QRectF Robot::boundingRect() const
 {
-    // Robot location size
+    // Robot location and size
     return QRect(0, 0, 20, 20);
 }
 
@@ -87,7 +87,11 @@ void Robot::advance(int phase)
 void Robot::doCollision()
 {
     // Set position
+    int var;
+    var = speed;
 
+    speed = 0;
+    speed = (-var);
     // Set new angle
 
 
