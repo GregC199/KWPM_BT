@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "ui_mainwindow.h"
 #include "robot.h"
+#include "obstacle.h"
 
 #include <QtCore>
 #include <QtGui>
@@ -87,6 +88,9 @@ private:
     Robot *rob1;
     QGraphicsScene *RobotScene;
     QTimer *RobotTimer;
+
+    // Przeszkody
+    Obstacle *obs1;
 
     //wyswietlanie wykresow
     QChartView* view_robot;

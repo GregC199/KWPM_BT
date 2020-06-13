@@ -1,5 +1,3 @@
-// myitem.cpp
-
 #include "robot.h"
 
 Robot::Robot(){
@@ -8,7 +6,7 @@ Robot::Robot(){
     setRobotAngle(CurrentRobotAngle);
 
     // Set init speed
-    speed = 5;
+    speed = 0;
 
     // Set init position
     int startX = 0;

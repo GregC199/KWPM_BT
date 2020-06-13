@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QLineF RightLine(RobotScene->sceneRect().topRight(),
                    RobotScene->sceneRect().bottomRight());
 
+
     RobotScene->addLine(TopLine, mypen);
     RobotScene->addLine(BottomLine, mypen);
     RobotScene->addLine(RightLine, mypen);
@@ -40,6 +41,10 @@ MainWindow::MainWindow(QWidget *parent) :
     RobotTimer = new QTimer(this);
     connect(RobotTimer, SIGNAL(timeout()), RobotScene, SLOT(advance()));
     RobotTimer->start(100);
+
+    // Utworzenie i dodanie przeszkody
+    obs1 = new Obstacle(100,100);
+    RobotScene->addItem(obs1);
 
     //tworzymy diody
     tworz_diode();

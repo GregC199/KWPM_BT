@@ -32,6 +32,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+    obstacle.cpp \
     robot.cpp \
     wykres.cpp \
     wykresy.cpp \
@@ -40,6 +41,7 @@ SOURCES += \
 
 HEADERS += \
         mainwindow.h \
+    obstacle.h \
     robot.h \
     wykres.h
 
