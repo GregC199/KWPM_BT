@@ -1,5 +1,3 @@
-// myitem.cpp
-
 #include "robot.h"
 
 Robot::Robot(){
@@ -8,7 +6,7 @@ Robot::Robot(){
     setRobotAngle(CurrentRobotAngle);
 
     // Set init speed
-    speed = 5;
+    speed = 0;
 
     // Set init position
     int startX = 0;
@@ -75,7 +73,7 @@ void Robot::setRobotAngle(int t_angle)
 
 
 
-// Odczytanie aktualnych wartosci predkosci i orientacji robota
+// Odczytanie aktualnych wartosci polozenia/przemieszczenia robota
 int Robot::getCurrentRobotSpeed() const
 {
     return this->speed;
@@ -85,6 +83,18 @@ int Robot::getCurrentRobotAngle() const
 {
     return this->CurrentRobotAngle;
 }
+
+qreal Robot::getCurrentXPos() const
+{
+    return this->y();
+}
+
+qreal Robot::getCurrentYPos() const
+{
+    return this->x();
+}
+
+
 
 ////////////////////////////////
 // Wykrycie i obsługa kolizji //
@@ -109,6 +119,6 @@ void Robot::doCollision()
 {
     // Zatryczmanie robota na przeszkodzie
     this->setRobotSpeed(0);
-}
+;}
 
 

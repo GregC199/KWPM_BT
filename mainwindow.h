@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "ui_mainwindow.h"
 #include "robot.h"
+#include "obstacle.h"
 
 #include <QtCore>
 #include <QtGui>
@@ -60,6 +61,12 @@ public:
     void inicjalizuj_info();
     void informacje_bluetooth();
 
+    // Dodanie przeszod
+    void addObstaclesDefaultSet();
+
+    // Wyswitlenie aktualnej pozycji robota
+    void showCurrentRobotPos();
+
     //diody
     void tworz_diode();
     void zapal_czerwone();
@@ -87,6 +94,10 @@ private:
     Robot *rob1;
     QGraphicsScene *RobotScene;
     QTimer *RobotTimer;
+
+    // Przeszkody
+    // Obstacle *obs;
+    void addObstacle(int t_x, int t_y);
 
     //wyswietlanie wykresow
     QChartView* view_robot;
@@ -131,6 +142,7 @@ private:
     //obsluga bt
     QBluetoothDeviceDiscoveryAgent* discoveryAgent;
     QBluetoothSocket* socket;
+    int stan_polaczenia;
 
     //aktualizacja logu polaczenia
     void addToLogs(QString message);
