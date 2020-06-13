@@ -10,6 +10,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->stan_polaczenia = 0;
 
+    this->dt_kat.start();
+    this->dt_predkosc.start();
+
 
     // Dodanie sceny
     RobotScene = new QGraphicsScene(this);
@@ -183,20 +186,99 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     czytanie >> j;
     czytanie >> przycisk_warunek;
 
-    this->kat += abs(((gyr_z - mem_robot_kat)/250)*360*pomiar_czasu/1000);
-    /*if(this->sztuczna_filtracja == 2){
-        this->kat -= 1;
-        this->sztuczna_filtracja = 0;
-    }*/
-    this->predkosc = 1;
 
-    std::cout << "kat:" << kat<< " predkosc:" << predkosc << "pomiar czasu: "<<pomiar_czasu<<std::endl;
+    if(przejscie_kat == 0 && kalman_y > 45){
+        ++przejscie_kat;
+        this->dt_kat.restart();
+
+    }
+    else{
+        if(przejscie_kat == 0 && kalman_y < -45){
+            ++przejscie_kat;
+            this->dt_kat.restart();
+        }
+        else{
+            if(kalman_y < -45 || kalman_y > 45){
+                pomiar_czasu_kat += this->dt_kat.restart();
+            }
+            if(kalman_y > -45 && kalman_y < 45){
+                this->dt_kat.restart();
+            }
+            if(kalman_y < -45 && (pomiar_czasu_kat >= (250*mul_kat))){
+
+                kat-=10;
+                ++mul_kat;
+
+            }
+            if(kalman_y > 45 && (pomiar_czasu_kat >= (250*mul_kat))){
+
+               kat += 10;
+               ++mul_kat;
+            }
+        }
+    }
+
+    if(przejscie_predkosc == 0 && kalman_x > 45){
+        ++przejscie_predkosc;
+        this->dt_predkosc.restart();
+
+    }
+    else{
+        if(przejscie_predkosc == 0 && kalman_x < -45){
+            ++przejscie_predkosc;
+            this->dt_predkosc.restart();
+        }
+        else{
+            if(kalman_x < -45 || kalman_x > 45){
+                pomiar_czasu_predkosc += this->dt_predkosc.restart();
+            }
+            if(kalman_x > -45 && kalman_x < 45){
+                this->dt_predkosc.restart();
+            }
+            if(kalman_x < -45 && (pomiar_czasu_predkosc >= (250*mul_predkosc))){
+                if(predkosc > -1){
+                    predkosc -= 1;
+                    ++mul_predkosc;
+                }
+                else{
+                    predkosc = -1;
+                    ++mul_predkosc;
+                }
+            }
+            if(kalman_x > 45 && (pomiar_czasu_predkosc >= (250*mul_predkosc))){
+                if(predkosc < 9){
+                    predkosc += 1;
+                    ++mul_predkosc;
+                }
+                else{
+                    predkosc = 9;
+                    ++mul_predkosc;
+                }
+            }
+        }
+    }
+
+
+    //////////////////////////////////////////////////
+    /*else{
+        pomiar_czasu_kat += (this->dt_kat.restart());
+        pomiar_czasu_predkosc += (this->dt_kat.restart());
+    }
+
+    if( (pomiar_czasu_kat) > (250*mul_kat) && kalman_y > 45){
+        kat+=5;
+        ++mul_kat;
+    }
+    if( (pomiar_czasu_kat) > (250*mul_kat) && kalman_y < -45){
+        kat-=5;
+        ++mul_kat;
+    }
+    this->predkosc = 1;*/
+
+    std::cout << "kat:" << kat<< " predkosc:" << predkosc << "pomiar czasu kat: "<<pomiar_czasu_kat<<"pomiar czasu predkosc: "<<pomiar_czasu_predkosc<<std::endl;
 
     rob1->setRobotSpeed(predkosc);
     rob1->setRobotAngle(kat);
-
-    this->mem_robot_predkosc = kalman_x;
-    this->mem_robot_kat = gyr_z;
 
     aktualizuj_wykres(robot_predkosc,gyr_x,gyr_y,gyr_z,roll,pitch,kalman_x,kalman_y,czas_zmierzony);
 

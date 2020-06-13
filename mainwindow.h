@@ -139,11 +139,18 @@ private:
 
     //pomiar czasu
     QTime pomiar;
-    QTime dt;
-    float pomiar_czasu;
-    int przejscie = 0;
 
-    int sztuczna_filtracja = 0;
+    QTime dt_kat;
+    int pomiar_czasu_kat = 0;
+    int mul_kat = 0;
+    int mem_czas_kat = 0;
+    int przejscie_kat = 0;
+
+    QTime dt_predkosc;
+    int pomiar_czasu_predkosc = 0;
+    int mul_predkosc = 0;
+    int mem_czas_predkosc = 0;
+    int przejscie_predkosc = 0;
 
     int predkosc = 0;
     int kat = 0;

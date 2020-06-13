@@ -75,7 +75,10 @@ void MainWindow::on_rozlacz_przycisk_clicked()
 
     this->socket->write(wyslij_wiad.toStdString().c_str());
 
-    this->przejscie = 0;
+    this->przejscie_kat = 0;
+    this->przejscie_predkosc = 0;
+    pomiar_czasu_kat = 0;
+    pomiar_czasu_predkosc = 0;
 
     this->socket->disconnectFromService();
 }
@@ -124,14 +127,6 @@ void MainWindow::socketReadyToRead() {
     unsigned long long zmierzony;
     while(this->socket->canReadLine()) {
 
-        if(przejscie == 0){
-            ++przejscie;
-            this->dt.start();
-
-        }
-        else{
-            pomiar_czasu = (this->dt.restart());
-        }
         //zapis ilosci milisekund uplynietych od startu programu
         zmierzony = (unsigned long long) this->pomiar.elapsed();
 
