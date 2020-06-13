@@ -143,7 +143,7 @@ void MainWindow::showCurrentRobotPos()
 void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
 
     //zmienne pomocnicze do realizacji zczytywania danych
-    char a[10],b[10],c[10],d[10],e[10],f[10],g[10],h[10],i[10],j[10];
+    char a[10],b[10],c[10],d[10],e[10],f[10],g[10],h[10],i[10],j[10],l[10];
     float  acc_x = 0.0;
     float  acc_y = 0.0;
     float  acc_z = 0.0;
@@ -154,7 +154,10 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     float  pitch = 0.0;
     int  robot_predkosc = this->rob1->getCurrentRobotSpeed();
     float  kalman_x = 0.0;
+    float  kalman_y = 0.0;
     int przycisk_warunek = 0;
+
+
 
     //zczytywanie kolejnych danych z pliku
     czytanie >> a;
@@ -175,17 +178,31 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     czytanie >> pitch;
     czytanie >> i;
     czytanie >> kalman_x;
+    czytanie >> l;
+    czytanie >> kalman_y;
     czytanie >> j;
     czytanie >> przycisk_warunek;
 
-    std::cout << "a:" << a << " " << gyr_x << " "<<  gyr_y << " "<< gyr_z << std::endl;
+    this->kat += abs(((gyr_z - mem_robot_kat)/250)*360*pomiar_czasu/1000);
+    /*if(this->sztuczna_filtracja == 2){
+        this->kat -= 1;
+        this->sztuczna_filtracja = 0;
+    }*/
+    this->predkosc = 1;
 
+    std::cout << "kat:" << kat<< " predkosc:" << predkosc << "pomiar czasu: "<<pomiar_czasu<<std::endl;
 
-    aktualizuj_wykres(robot_predkosc,gyr_x,gyr_y,gyr_z,roll,pitch,kalman_x,czas_zmierzony);
+    rob1->setRobotSpeed(predkosc);
+    rob1->setRobotAngle(kat);
+
+    this->mem_robot_predkosc = kalman_x;
+    this->mem_robot_kat = gyr_z;
+
+    aktualizuj_wykres(robot_predkosc,gyr_x,gyr_y,gyr_z,roll,pitch,kalman_x,kalman_y,czas_zmierzony);
 
 }
 
-void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, unsigned long long czas){
+void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, float y_kalman, unsigned long long czas){
 
     //os czasu - zmienne pomocnicze sluzace do jej przesuwania
     long double test = ((long double)czas)/1000;
@@ -225,6 +242,8 @@ void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float 
 
     this->series_kom_wykres_y->append(test,pkom);
 
+    this->series_kalman_wykres_y->append(test,y_kalman);
+
     //gyrz
     this->series_gyr_wykres_z->append(test,g_z);
 
@@ -246,7 +265,7 @@ void MainWindow::on_robotSpeedFwd_pushButton_clicked()
 
     newRobotSpeed = this->rob1->getCurrentRobotSpeed();
     newRobotSpeed += 1;
-    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
+    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
 
     if(newRobotSpeed < 10){
         this->rob1->setRobotSpeed(newRobotSpeed);
@@ -261,7 +280,7 @@ void MainWindow::on_robotSpeedBwd_pushButton_clicked()
 
     newRobotSpeed = this->rob1->getCurrentRobotSpeed();
     newRobotSpeed -= 1;
-    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
+    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
 
 
     // Predkość -1, aby była maożliwość wycofania po kolizji

@@ -52,7 +52,7 @@ public:
     void wczytanie_danych_z_logu(unsigned long long czas_zmierzony);
 
     //aktualizacja danych na wykresie
-    void aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, unsigned long long czas);
+    void aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float g_z,float rkom,float pkom, float x_kalman, float y_kalman, unsigned long long czas);
 
     //inicjalizacja obslugi bluetooth
     void obsluga_bt();
@@ -114,6 +114,7 @@ private:
 
     QLineSeries* series_gyr_wykres_y;
     QLineSeries* series_kom_wykres_y;
+    QLineSeries* series_kalman_wykres_y;
 
     QLineSeries* series_gyr_wykres_z;
 
@@ -138,6 +139,18 @@ private:
 
     //pomiar czasu
     QTime pomiar;
+    QTime dt;
+    float pomiar_czasu;
+    int przejscie = 0;
+
+    int sztuczna_filtracja = 0;
+
+    int predkosc = 0;
+    int kat = 0;
+
+    //obsluga predkosci/kata robota
+    float mem_robot_predkosc = 0.0;
+    float mem_robot_kat = 0.0;
 
     //obsluga bt
     QBluetoothDeviceDiscoveryAgent* discoveryAgent;

@@ -93,6 +93,10 @@ void MainWindow::utworz_serie(){
     this->series_kom_wykres_y->append(0,0);
     this->series_kom_wykres_y->setName("Y_kom");
 
+    this->series_kalman_wykres_y = new QLineSeries();
+    this->series_kalman_wykres_y->append(0,0);
+    this->series_kalman_wykres_y->setName("Y_kal");
+
 
     this->series_gyr_wykres_z = new QLineSeries();
     this->series_gyr_wykres_z->append(0,0);
@@ -143,6 +147,7 @@ void MainWindow::utworz_wykresy(){
 
     this->line_gyr_wykres_y->addSeries(this->series_gyr_wykres_y);
     this->line_gyr_wykres_y->addSeries(this->series_kom_wykres_y);
+    this->line_gyr_wykres_y->addSeries(this->series_kalman_wykres_y);
 
     this->line_gyr_wykres_y->setTitle("Zczytania wzdłuż osi Y");
 
@@ -197,6 +202,7 @@ void MainWindow::przypnij_serie_do_osi(){
 
     this->series_gyr_wykres_y->attachAxis(this->timeline_gyr_y);
     this->series_kom_wykres_y->attachAxis(this->timeline_gyr_y);
+    this->series_kalman_wykres_y->attachAxis(this->timeline_gyr_y);
 
     this->series_gyr_wykres_z->attachAxis(this->timeline_gyr_z);
 
@@ -209,6 +215,7 @@ void MainWindow::przypnij_serie_do_osi(){
 
     this->series_gyr_wykres_y->attachAxis(this->gyr_y_wartosci_y);
     this->series_kom_wykres_y->attachAxis(this->gyr_y_wartosci_y);
+    this->series_kalman_wykres_y->attachAxis(this->gyr_y_wartosci_y);
 
     this->series_gyr_wykres_z->attachAxis(this->gyr_z_wartosci_y);
 }

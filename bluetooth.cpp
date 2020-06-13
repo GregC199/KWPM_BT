@@ -67,13 +67,15 @@ void MainWindow::on_polacz_przycisk_clicked()
 void MainWindow::on_rozlacz_przycisk_clicked()
 {
     this->addToLogs("Zamykam polaczenie");
-   /* QString wyslij_wiad;
+    QString wyslij_wiad;
 
     this->stan_polaczenia = 0;
 
-    wyslij_wiad = "0";
+    wyslij_wiad = "0\n";
 
-    this->socket->write(wyslij_wiad.toStdString().c_str());*/
+    this->socket->write(wyslij_wiad.toStdString().c_str());
+
+    this->przejscie = 0;
 
     this->socket->disconnectFromService();
 }
@@ -122,6 +124,14 @@ void MainWindow::socketReadyToRead() {
     unsigned long long zmierzony;
     while(this->socket->canReadLine()) {
 
+        if(przejscie == 0){
+            ++przejscie;
+            this->dt.start();
+
+        }
+        else{
+            pomiar_czasu = (this->dt.restart());
+        }
         //zapis ilosci milisekund uplynietych od startu programu
         zmierzony = (unsigned long long) this->pomiar.elapsed();
 

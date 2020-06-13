@@ -34,7 +34,7 @@ font-color: (255,255,255);</string>
        <string notr="true">background-color: rgb(80, 80, 80);</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="Status_polaczenia">
        <property name="layoutDirection">
