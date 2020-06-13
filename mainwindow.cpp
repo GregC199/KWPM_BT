@@ -43,8 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     RobotTimer->start(100);
 
     // Utworzenie i dodanie przeszkody
-    obs1 = new Obstacle(100,100);
-    RobotScene->addItem(obs1);
+    addObstaclesDefaultSet();
 
     //tworzymy diody
     tworz_diode();
@@ -113,6 +112,15 @@ void MainWindow::informacje_bluetooth(){
     ui->nazwy_info_pol->append(this->typ_polaczenia);
     ui->nazwy_info_pol->append(this->data_polaczenia);
 
+}
+
+void MainWindow::addObstaclesDefaultSet()
+{
+    this->addObstacle(200,200);
+    this->addObstacle(-100,-100);
+    this->addObstacle(-90,80);
+    this->addObstacle(120,-30);
+    this->addObstacle(100,100);
 }
 
 void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
@@ -256,3 +264,11 @@ void MainWindow::on_robotTurnRight_pushButton_clicked()
 
     this->rob1->setRobotAngle(t_currentAngle);
 }
+
+// Dodanie przeszkody
+void MainWindow::addObstacle(int t_x, int t_y)
+{
+    Obstacle *obs = new Obstacle(t_x,t_y);
+    this->RobotScene->addItem(obs);
+}
+

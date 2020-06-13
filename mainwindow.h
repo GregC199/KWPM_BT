@@ -61,6 +61,9 @@ public:
     void inicjalizuj_info();
     void informacje_bluetooth();
 
+    // Dodanie przeszod
+    void addObstaclesDefaultSet();
+
     //diody
     void tworz_diode();
     void zapal_czerwone();
@@ -90,7 +93,8 @@ private:
     QTimer *RobotTimer;
 
     // Przeszkody
-    Obstacle *obs1;
+    // Obstacle *obs;
+    void addObstacle(int t_x, int t_y);
 
     //wyswietlanie wykresow
     QChartView* view_robot;
