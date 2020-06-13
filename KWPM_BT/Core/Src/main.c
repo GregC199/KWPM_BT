@@ -76,6 +76,7 @@
 
 //Komunikacja
 int8_t Wiadomosc[200];
+uint8_t Odbior;
 int16_t Rozmiar;
 
 uint8_t Dane[6]; // Tablica przechowujaca wszystkie bajty zczytane z akcelerometru lub zyroskopu
@@ -102,9 +103,15 @@ float Z_kat = 0; // Zawiera wartosc przyspieszenia katowego w osi Z w jednostce 
 float roll = 0; //kat roll dla filtru komplementarnego
 float pitch = 0; //kat pitch dla filtru komplementarnego
 
+int Button_B_mem = 0; //zmienne przechowujace stan przycisku B1
+int Button_B = 0;
+
+int Polaczenie = 0; //nawiazana lacznosc z komputerem
 
 
-//KALMAN
+
+
+//KALMAN x
 float x_post[2];
 float A[4], B[2], C[2];
 float std_dev_v, std_dev_w;
@@ -122,6 +129,25 @@ float CP[2], CPCT[1];
 float PCT[2], S1[1];
 float Keps[2];
 float KS[2], KSKT[2];
+
+//KALMAN y
+float y_post[2];
+float A2[4], B2[2], C2[2];
+float std_dev_v2, std_dev_w2;
+float V2[4], W2[1];
+float P_pri2[4], P_post2[4];
+float y_pri[2];
+float eps2[1], S2[1], K2[2];
+float u2[1];
+float y2[1];
+
+float Ax2[2], Bu2[2];
+float AP2[4], AT2[4], APAT2[4];
+float Cx2[1];
+float CP2[2], CPCT2[1];
+float PCT2[2], S12[1];
+float Keps2[2];
+float KS2[2], KSKT2[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -134,12 +160,17 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 
 volatile int flaga = 0;
+volatile int flaga2 = 0;
 //printf przeciazenie
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef* htim)
 {
 	if(htim == &htim11){
 		flaga = 1;
+	}
+
+	if(htim == &htim10){
+		flaga2 = 1;
 	}
 }
 
@@ -258,6 +289,45 @@ void KalmanInit(float xg, float zg, float za){
 	HAL_Delay(150);
 }
 
+void KalmanInitY(float yg, float zg, float za){
+	float dt;
+
+
+	dt = 0.02;
+
+	A2[0] = 1;
+	A2[1] = -dt;
+	A2[2] = 0;
+	A2[3] = 1;
+
+	B2[0] = dt;
+	B2[1] = 0;
+
+	C2[0] = 1;
+	C2[1] = 0;
+
+	std_dev_v2 = 1;
+	std_dev_w2 = 2;
+	V2[0] = std_dev_v2 * std_dev_v2 * dt;
+	V2[1] = 0;
+	V2[2] = 0;
+	V2[3] = std_dev_v2 * std_dev_v2 * dt;
+	W2[0] = std_dev_w2 * std_dev_w2;
+
+	/* Wartosci poczatkowe filtru */
+	P_post2[0] = 1;
+	P_post2[1] = 0;
+	P_post2[2] = 0;
+	P_post2[3] = 1;
+
+	acc_y = yg;
+	acc_z = zg;
+	y_post[0] = atan2f(acc_y,acc_z) * 180 / M_PI;
+	y_post[1] = 0;
+
+	HAL_Delay(150);
+}
+
 void filtrKalmana(float xg, float zg, float za){
 
 		// I
@@ -301,6 +371,49 @@ void filtrKalmana(float xg, float zg, float za){
 
 }
 
+void filtrKalmanaY(float yg, float zg, float za){
+
+		// I
+		u2[0] = za * 250 / 32768;
+		matrix_2x2_mul_2x1(A2, y_post, Ax2);
+		mx2x1_tim_mx1x1(B2, u2, Bu2);
+		matrix_2x1_add_2x1(Ax2, Bu2, y_pri);
+
+		// II
+		matrix_2x2_mul_2x2(A2, P_post2, AP2);
+		matrix_2x2_trans(A2, AT2);
+		matrix_2x2_mul_2x2(AP2, AT2, APAT2);
+		matrix_2x2_add_2x2(APAT2, V2, P_pri2);
+
+		// III
+		acc_y = yg;
+		acc_z = zg;
+		y2[0] = atan2f(acc_y,acc_z ) * 180 / M_PI;
+		mx1x2_tim_mx2x1(C2, y_pri, Cx2);
+		eps2[0] = y2[0] - Cx2[0];
+
+		// IV
+		mx1x2_tim_mx2x2(C2, P_pri2, CP2);
+		mx1x2_tim_mx2x1(C2, C2, CPCT2);
+		S2[0] = CPCT2[0] + W2[0];
+
+		// V
+		matrix_2x2_mul_2x1(P_pri2, C2, PCT2);
+		S12[0] = 1 / S2[0];
+		mx2x1_tim_mx1x1(PCT2, S12, K2);
+
+		// VI
+		mx2x1_tim_mx1x1(K2, eps2, Keps2);
+		matrix_2x1_add_2x1(y_pri, Keps2, y_post);
+
+		// VII
+		mx2x1_tim_mx1x1(K2, S2, KS2);
+		matrix_2x1_mul_1x2(KS2, K2, KSKT2);
+		matrix_2x2_sub_2x2(P_pri2, KSKT2, P_post2);
+
+
+}
+
 
 /* USER CODE END 0 */
 
@@ -336,6 +449,7 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM11_Init();
   MX_USART2_UART_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
 
   //Zablokowanie komunikacji z zyroskopem
@@ -361,69 +475,112 @@ int main(void)
   //Kalman init
   KalmanInit(X_g,Z_g,Z_kat);
 
+  KalmanInitY(Y_g,Z_g,Z_kat);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  //TIM11 - 50Hz
+  //TIM11 - 50Hz TIM10 - 10Hz
   HAL_TIM_Base_Start_IT(&htim11);
+  HAL_TIM_Base_Start_IT(&htim10);
 
   while (1)
   {
-	   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
+	  if(Polaczenie == 1){
 
+		  Button_B_mem = Button_B;
+		  Button_B = 0;
 		   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-				   if (flaga == 1){
-					   //Zczytanie kolejnych 6ściu bajtów wskazań z kolejno osi x, y, z (3x(mlodszy + starszy bajt))
-					   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
-					   X = ((Dane[1] << 8) | Dane[0]);
-					   Y = ((Dane[3] << 8) | Dane[2]);
-					   Z = ((Dane[5] << 8) | Dane[4]);
+			   if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_SET) {
 
-					   //Przeksztalcenie w faktyczna jednostke wskazan
-					   X_g = ((float) X * 4.0) / (float) INT16_MAX;
-					   Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
-					   Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
+				   Button_B = 1;
 
-					   X_roznica = fabs(X_mem - X_g);
-					   Y_roznica = fabs(Y_mem - Y_g);
-					   Z_roznica = fabs(Z_mem - Z_g);
+					   if (flaga == 1){
 
 
-					   L3GD20_MultiRead(&hspi1);
 
-					   X_kat = ((float)((int16_t)((Dane[1] << 8) | Dane[0])) * 250.0)/(float) INT16_MAX;
-					   Y_kat = ((float)((int16_t)((Dane[3] << 8) | Dane[2])) * 250.0)/(float) INT16_MAX;
-					   Z_kat = ((float)((int16_t)((Dane[5] << 8) | Dane[4])) * 250.0)/(float) INT16_MAX;
+						   //Zczytanie kolejnych 6ściu bajtów wskazań z kolejno osi x, y, z (3x(mlodszy + starszy bajt))
+						   HAL_I2C_Mem_Read(&hi2c1, ACC_ADRES, ACC_WSZYSTKIE_OSIE_ZCZYTANIE, 1, Dane, 6, 100);
+						   X = ((Dane[1] << 8) | Dane[0]);
+						   Y = ((Dane[3] << 8) | Dane[2]);
+						   Z = ((Dane[5] << 8) | Dane[4]);
 
-					   if(X_roznica > 0.15)HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-					   if(Y_roznica > 0.15)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
-					   if(Z_roznica > 0.15)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+						   //Przeksztalcenie w faktyczna jednostke wskazan
+						   X_g = ((float) X * 4.0) / (float) INT16_MAX;
+						   Y_g = ((float) Y * 4.0) / (float) INT16_MAX;
+						   Z_g = ((float) Z * 4.0) / (float) INT16_MAX;
 
-					   filtrKalmana(X_g,Z_g,Z_kat);
+						   X_roznica = fabs(X_mem - X_g);
+						   Y_roznica = fabs(Y_mem - Y_g);
+						   Z_roznica = fabs(Z_mem - Z_g);
 
-					   Filtr_komplementarny(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat,X_roznica+Y_roznica+Z_roznica);
 
-					   Rozmiar = sprintf((char *)Wiadomosc, "Xg: %f Yg: %f Zg: %f Xa: %f Ya: %f Za: %f Rkom: %f Pkom: %f Xpost0: %f Xpost1: %f\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],x_post[1]);
+						   L3GD20_MultiRead(&hspi1);
 
-					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+						   X_kat = ((float)((int16_t)((Dane[1] << 8) | Dane[0])) * 250.0)/(float) INT16_MAX;
+						   Y_kat = ((float)((int16_t)((Dane[3] << 8) | Dane[2])) * 250.0)/(float) INT16_MAX;
+						   Z_kat = ((float)((int16_t)((Dane[5] << 8) | Dane[4])) * 250.0)/(float) INT16_MAX;
 
-					   HAL_Delay(5);
+						   if(X_roznica > 0.15)HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+						   if(Y_roznica > 0.15)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
+						   if(Z_roznica > 0.15)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
 
-					   X_mem = X_g;
-					   Y_mem = Y_g;
-					   Z_mem = Z_g;
+						   filtrKalmana(X_g,Z_g,Z_kat);
+						   filtrKalmanaY(Y_g,Z_g,Z_kat);
 
-					   flaga = 0;
+						   Filtr_komplementarny(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat,X_roznica+Y_roznica+Z_roznica);
+
+						   Rozmiar = sprintf((char *)Wiadomosc, "Xg: %f Yg: %f Zg: %f Xa: %f Ya: %f Za: %f Rkom: %f Pkom: %f Xpost: %f Ypost: %f B: %d\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],y_post[0],Button_B);
+
+						   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+
+						   HAL_Delay(5);
+
+						   X_mem = X_g;
+						   Y_mem = Y_g;
+						   Z_mem = Z_g;
+
+						   flaga = 0;
+					   }
 				   }
-		   	   }
+
+			   }
+		   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+		   HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+		   HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+
+		   if(Button_B_mem == Button_B && Button_B_mem == 0 && flaga == 1){
+
+			   flaga = 0;
+			   Rozmiar = sprintf((char *)Wiadomosc, "Xg: %f Yg: %f Zg: %f Xa: %f Ya: %f Za: %f Rkom: %f Pkom: %f Xpost: %f Ypost: %f B: %d\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],y_post[0],Button_B);
+
+			   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
+
+			   HAL_Delay(5);
+		   }
+	  }
+	  if(flaga2 == 1){
+
+		   HAL_UART_Receive(&huart2, &Odbior, 1,10);
+
+		   if(Odbior == '1'){
+
+			   Polaczenie = 1;
 
 		   }
-	   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-	   HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-	   HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+
+		   if(Odbior == '0'){
+
+			   Polaczenie = 0;
+
+		   }
+		   flaga2 = 0;
+
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -454,7 +611,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 100;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -466,7 +623,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
