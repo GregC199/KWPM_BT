@@ -38,7 +38,7 @@ void MainWindow::utworz_osie(){
     //tworzenie osi wartosci robot
     this->robot_wartosi = new QValueAxis;
     this->robot_wartosi->setLabelFormat("%.2f");
-    this->robot_wartosi->setRange(-10,10);
+    this->robot_wartosi->setRange(-1,9);
     this->robot_wartosi->setTickCount(6);
     this->robot_wartosi->setLabelsFont(czcionka_osi);
 
@@ -73,20 +73,25 @@ void MainWindow::utworz_serie(){
     //gyr x, roll, kalman x, y, pitch, z
     this->series_gyr_wykres_x = new QLineSeries();
     this->series_gyr_wykres_x->append(0,0);
+    this->series_gyr_wykres_x->setName("X_surowe");
 
     this->series_kom_wykres_x = new QLineSeries();
     this->series_kom_wykres_x->append(0,0);
+    this->series_kom_wykres_x->setName("X_kom");
 
     this->series_kalman_wykres_x = new QLineSeries();
     this->series_kalman_wykres_x->append(0,0);
+    this->series_kalman_wykres_x->setName("X_kal");
 
 
     this->series_gyr_wykres_y = new QLineSeries();
     this->series_gyr_wykres_y->append(0,0);
+    this->series_gyr_wykres_y->setName("Y_surowe");
 
 
     this->series_kom_wykres_y = new QLineSeries();
     this->series_kom_wykres_y->append(0,0);
+    this->series_kom_wykres_y->setName("Y_kom");
 
 
     this->series_gyr_wykres_z = new QLineSeries();
@@ -125,7 +130,7 @@ void MainWindow::utworz_wykresy(){
 
     this->line_gyr_wykres_x->setTitle("Zczytania wzdłuż osi X");
 
-    this->line_gyr_wykres_x->legend()->hide();
+    this->line_gyr_wykres_x->legend()->setAlignment(Qt::AlignLeft);
 
 
 
@@ -141,7 +146,7 @@ void MainWindow::utworz_wykresy(){
 
     this->line_gyr_wykres_y->setTitle("Zczytania wzdłuż osi Y");
 
-    this->line_gyr_wykres_y->legend()->hide();
+    this->line_gyr_wykres_y->legend()->setAlignment(Qt::AlignLeft);
 
 
 

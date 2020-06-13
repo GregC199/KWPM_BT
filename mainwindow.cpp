@@ -147,6 +147,8 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     czytanie >> j;
     czytanie >> k;
 
+    std::cout << "a:" << a << " " << gyr_x << " "<<  gyr_y << " "<< gyr_z << std::endl;
+
 
     aktualizuj_wykres(robot_predkosc,gyr_x,gyr_y,gyr_z,roll,pitch,kalman_x,czas_zmierzony);
 
@@ -163,9 +165,9 @@ void MainWindow::aktualizuj_wykres(float rob_predkosc,float g_x,float g_y,float 
     //przesuniecie osi czasu
     while(koniec < test){
         memory=koniec;
-        koniec=koniec+60;
+        koniec=koniec+30;
     }
-    if(koniec>60.0)poczatek = ceil(memory);
+    if(koniec>30.0)poczatek = ceil(memory);
 
     //sprawdzenie czy nastąpiła zmiana osi czasy
     if(timeline_robot->max() != ceil(koniec)){
