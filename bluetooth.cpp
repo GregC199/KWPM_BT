@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+
 void MainWindow::obsluga_bt(){
 
     this->discoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
@@ -66,6 +67,14 @@ void MainWindow::on_polacz_przycisk_clicked()
 void MainWindow::on_rozlacz_przycisk_clicked()
 {
     this->addToLogs("Zamykam polaczenie");
+   /* QString wyslij_wiad;
+
+    this->stan_polaczenia = 0;
+
+    wyslij_wiad = "0";
+
+    this->socket->write(wyslij_wiad.toStdString().c_str());*/
+
     this->socket->disconnectFromService();
 }
 
@@ -79,6 +88,14 @@ void MainWindow::connectionEstablished() {
     //deaktywacja przycisku połącz
     ui->polacz_przycisk->setEnabled(false);
     ui->rozlacz_przycisk->setEnabled(true);
+
+    QString wyslij_wiad;
+
+    this->stan_polaczenia = 1;
+
+    wyslij_wiad = "1";
+
+    this->socket->write(wyslij_wiad.toStdString().c_str());
 
     //aktualizacja informacji bluetooth
     informacje_bluetooth();

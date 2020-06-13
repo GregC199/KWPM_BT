@@ -135,6 +135,7 @@ private:
     //obsluga bt
     QBluetoothDeviceDiscoveryAgent* discoveryAgent;
     QBluetoothSocket* socket;
+    int stan_polaczenia;
 
     //aktualizacja logu polaczenia
     void addToLogs(QString message);

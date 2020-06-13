@@ -8,6 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    this->stan_polaczenia = 0;
+
 
     // Dodanie sceny
     RobotScene = new QGraphicsScene(this);
@@ -118,7 +120,7 @@ void MainWindow::informacje_bluetooth(){
 void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
 
     //zmienne pomocnicze do realizacji zczytywania danych
-    char a[10],b[10],c[10],d[10],e[10],f[10],g[10],h[10],i[10],j[10],k[10];
+    char a[10],b[10],c[10],d[10],e[10],f[10],g[10],h[10],i[10],j[10];
     float  acc_x = 0.0;
     float  acc_y = 0.0;
     float  acc_z = 0.0;
@@ -127,8 +129,9 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     float  gyr_z = 0.0;
     float  roll = 0.0;
     float  pitch = 0.0;
-    float  robot_predkosc = 0.0;
+    int  robot_predkosc = this->rob1->getCurrentRobotSpeed();
     float  kalman_x = 0.0;
+    int przycisk_warunek = 0;
 
     //zczytywanie kolejnych danych z pliku
     czytanie >> a;
@@ -150,7 +153,7 @@ void MainWindow::wczytanie_danych_z_logu(unsigned long long czas_zmierzony){
     czytanie >> i;
     czytanie >> kalman_x;
     czytanie >> j;
-    czytanie >> k;
+    czytanie >> przycisk_warunek;
 
     std::cout << "a:" << a << " " << gyr_x << " "<<  gyr_y << " "<< gyr_z << std::endl;
 
@@ -219,6 +222,7 @@ void MainWindow::on_robotSpeedFwd_pushButton_clicked()
 
     newRobotSpeed = this->rob1->getCurrentRobotSpeed();
     newRobotSpeed += 1;
+    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
 
     if(newRobotSpeed < 10){
         this->rob1->setRobotSpeed(newRobotSpeed);
@@ -231,6 +235,8 @@ void MainWindow::on_robotSpeedBwd_pushButton_clicked()
 
     newRobotSpeed = this->rob1->getCurrentRobotSpeed();
     newRobotSpeed -= 1;
+    aktualizuj_wykres(newRobotSpeed,0.0,0.0,0.0,0.0,0.0,0.0,this->pomiar.elapsed());
+
 
     // Predkość -1, aby była maożliwość wycofania po kolizji
     if(newRobotSpeed >= -1){
