@@ -113,7 +113,7 @@ float P_pri[4], P_post[4];
 float x_pri[2];
 float eps[1], S[1], K[2];
 float u[1], y[1];
-float acc_x, acc_y;
+float acc_x, acc_y, acc_z;
 
 float Ax[2], Bu[2];
 float AP[4], AT[4], APAT[4];
@@ -148,7 +148,7 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 	HAL_Delay(1000);
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_SET);
 	HAL_Delay(100);                       //Przywrocenie ustawien fabrycznych
-	/*HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
+	HAL_UART_Transmit(UART, (uint8_t*) "AT+ORGL\r\n", strlen("AT+ORGL\r\n"), 100);
 	HAL_Delay(100);                        //Wyzerowanie sparowanych urzadzen
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+RMAAD\r\n", strlen("AT+RMAAD\r\n"), 100);
 	HAL_Delay(100);                               //Zmiana nazwy na  BT_STM
@@ -157,7 +157,7 @@ void Setup_UART_BT(UART_HandleTypeDef * UART){
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+ROLE=0\r\n", strlen("AT+ROLE=0\r\n"), 100);
 	HAL_Delay(100);                    //Ustawienie predkosci, ilosci bitow stop, parzystosci
 	HAL_UART_Transmit(UART, (uint8_t*) "AT+UART=115200,0,0\r\n", strlen("AT+UART=115200,0,0\r\n"), 100);
-	HAL_Delay(100);*/
+	HAL_Delay(100);
 	HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, GPIO_PIN_RESET);
 
 }
@@ -219,7 +219,7 @@ void Filtr_komplementarny(float xg, float yg, float zg, float xa, float ya, floa
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-void KalmanInit(float xg, float yg, float zg){
+void KalmanInit(float xg, float zg, float za){
 	float dt;
 
 
@@ -251,17 +251,17 @@ void KalmanInit(float xg, float yg, float zg){
 	P_post[3] = 1;
 
 	acc_x = xg;
-	acc_y = yg;
-	x_post[0] = atan2f(acc_y,acc_x) * 180 / M_PI;
+	acc_z = zg;
+	x_post[0] = atan2f(acc_x,acc_z) * 180 / M_PI;
 	x_post[1] = 0;
 
 	HAL_Delay(150);
 }
 
-void filtrKalmana(float xg, float yg, float zg){
+void filtrKalmana(float xg, float zg, float za){
 
 		// I
-		u[0] = zg * 250 / 32768;
+		u[0] = za * 250 / 32768;
 		matrix_2x2_mul_2x1(A, x_post, Ax);
 		mx2x1_tim_mx1x1(B, u, Bu);
 		matrix_2x1_add_2x1(Ax, Bu, x_pri);
@@ -274,8 +274,8 @@ void filtrKalmana(float xg, float yg, float zg){
 
 		// III
 		acc_x = xg;
-		acc_y = yg;
-		y[0] = atan2f(acc_y,acc_x ) * 180 / M_PI;
+		acc_z = zg;
+		y[0] = atan2f(acc_x,acc_z ) * 180 / M_PI;
 		mx1x2_tim_mx2x1(C, x_pri, Cx);
 		eps[0] = y[0] - Cx[0];
 
@@ -359,7 +359,7 @@ int main(void)
   Setup_L3GD20(&hspi1);
 
   //Kalman init
-  KalmanInit(X_g,Y_g,Z_g);
+  KalmanInit(X_g,Z_g,Z_kat);
 
   /* USER CODE END 2 */
 
@@ -402,11 +402,11 @@ int main(void)
 					   if(Y_roznica > 0.15)HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin);
 					   if(Z_roznica > 0.15)HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
 
-					   filtrKalmana(X_g,Y_g,Z_g);
+					   filtrKalmana(X_g,Z_g,Z_kat);
 
 					   Filtr_komplementarny(X_g,Y_g,Z_g, X_kat,Y_kat,Z_kat,X_roznica+Y_roznica+Z_roznica);
 
-					   Rozmiar = sprintf((char *)Wiadomosc, "Xg:%f Yg:%f Zg:%f Xa:%f Ya:%f Za:%f Rkom:%f Pkom:%f Xpost0:%f Xpost1:%f\r\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],x_post[1]);
+					   Rozmiar = sprintf((char *)Wiadomosc, "Xg: %f Yg: %f Zg: %f Xa: %f Ya: %f Za: %f Rkom: %f Pkom: %f Xpost0: %f Xpost1: %f\n", X_g,Y_g, Z_g, X_kat,Y_kat,Z_kat,roll,pitch,x_post[0],x_post[1]);
 
 					   HAL_UART_Transmit(&huart2, (uint8_t*) Wiadomosc,  Rozmiar, 100);
 
