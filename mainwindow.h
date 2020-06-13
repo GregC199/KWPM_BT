@@ -64,6 +64,9 @@ public:
     // Dodanie przeszod
     void addObstaclesDefaultSet();
 
+    // Wyswitlenie aktualnej pozycji robota
+    void showCurrentRobotPos();
+
     //diody
     void tworz_diode();
     void zapal_czerwone();
